@@ -1,8 +1,13 @@
 import { motion } from "framer-motion";
-import { Zap } from "lucide-react";
+import { Zap, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
+  const { user, role, signOut } = useAuth();
+
+  const dashboardLink = role === "organizer" ? "/organizer" : role === "admin" ? "/admin" : "/athlete";
+
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -31,18 +36,38 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Log in
-          </Link>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <>
+              <Link
+                to={dashboardLink}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </motion.nav>
