@@ -14,6 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_registrations: {
+        Row: {
+          athlete_id: string
+          event_id: string
+          id: string
+          registered_at: string
+          status: string
+        }
+        Insert: {
+          athlete_id: string
+          event_id: string
+          id?: string
+          registered_at?: string
+          status?: string
+        }
+        Update: {
+          athlete_id?: string
+          event_id?: string
+          id?: string
+          registered_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_results: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          position: number | null
+          score: number | null
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          position?: number | null
+          score?: number | null
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          position?: number | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_results_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string | null
+          max_participants: number | null
+          organizer_id: string
+          registration_fee: number | null
+          sport: string
+          start_date: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          max_participants?: number | null
+          organizer_id: string
+          registration_fee?: number | null
+          sport: string
+          start_date: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string
+          registration_fee?: number | null
+          sport?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -78,6 +196,12 @@ export type Database = {
     }
     Enums: {
       app_role: "athlete" | "organizer" | "admin"
+      event_status:
+        | "draft"
+        | "published"
+        | "ongoing"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -206,6 +330,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["athlete", "organizer", "admin"],
+      event_status: ["draft", "published", "ongoing", "completed", "cancelled"],
     },
   },
 } as const
