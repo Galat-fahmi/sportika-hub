@@ -1,10 +1,20 @@
 import { motion } from "framer-motion";
-import { Zap, LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Zap, LogOut, Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+
+const navLinks = [
+  { to: "/", label: "Home" },
+  { to: "/about", label: "About" },
+  { to: "/sponsorship", label: "Sponsorship" },
+  { to: "/beverages", label: "Beverages" },
+];
 
 const Navbar = () => {
   const { user, role, signOut } = useAuth();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const dashboardLink = role === "organizer" ? "/organizer" : role === "admin" ? "/admin" : "/athlete";
 
@@ -23,16 +33,21 @@ const Navbar = () => {
           </span>
         </Link>
 
+        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Features
-          </a>
-          <a href="#platforms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Platforms
-          </a>
-          <a href="#events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Events
-          </a>
+          {navLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`text-sm transition-colors ${
+                location.pathname === link.to
+                  ? "text-primary font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
         <div className="flex items-center gap-3">
@@ -56,7 +71,7 @@ const Navbar = () => {
             <>
               <Link
                 to="/login"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Log in
               </Link>
@@ -68,8 +83,42 @@ const Navbar = () => {
               </Link>
             </>
           )}
+
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
+        >
+          <div className="container mx-auto py-4 flex flex-col gap-3">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                className={`text-sm py-2 transition-colors ${
+                  location.pathname === link.to
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </motion.nav>
   );
 };
