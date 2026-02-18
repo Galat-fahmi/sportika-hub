@@ -1,7 +1,10 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
+import BrandIntroSection from "@/components/landing/BrandIntroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import PlatformsSection from "@/components/landing/PlatformsSection";
+import UpcomingEventsSection from "@/components/landing/UpcomingEventsSection";
+import EnergyDrinkTeaser from "@/components/landing/EnergyDrinkTeaser";
+import SponsorsSection from "@/components/landing/SponsorsSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/Footer";
 
@@ -11,8 +14,11 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <BrandIntroSection />
         <FeaturesSection />
-        <PlatformsSection />
+        <UpcomingEventsSection />
+        <EnergyDrinkTeaser />
+        <SponsorsSection />
         <CTASection />
       </main>
       <Footer />
