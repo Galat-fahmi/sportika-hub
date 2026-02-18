@@ -1,12 +1,15 @@
 import { motion } from "framer-motion";
-import { Zap, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import logo from "@/assets/sportika-wolf-logo.png";
 
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
+  { to: "/players", label: "Players" },
+  { to: "/blog", label: "Blog" },
   { to: "/sponsorship", label: "Sponsorship" },
   { to: "/beverages", label: "Beverages" },
 ];
@@ -23,11 +26,11 @@ const Navbar = () => {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 glass"
+      className="fixed top-0 left-0 right-0 z-50 glass-navbar"
     >
       <div className="container mx-auto flex items-center justify-between py-4">
-        <Link to="/" className="flex items-center gap-2">
-          <Zap className="h-7 w-7 text-primary" />
+        <Link to="/" className="flex items-center gap-3">
+          <img src={logo} alt="Sportika" className="h-10 w-10 object-contain" />
           <span className="text-xl font-display font-bold text-foreground tracking-tight">
             Sportika
           </span>
@@ -39,10 +42,10 @@ const Navbar = () => {
             <Link
               key={link.to}
               to={link.to}
-              className={`text-sm transition-colors ${
+              className={`text-sm font-medium transition-all duration-300 hover-lift ${
                 location.pathname === link.to
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-primary font-bold text-gradient"
+                  : "text-muted-foreground hover:text-foreground hover:text-gradient-subtle"
               }`}
             >
               {link.label}
@@ -61,7 +64,7 @@ const Navbar = () => {
               </Link>
               <button
                 onClick={signOut}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/80 px-3 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/90 hover:border-primary/50 transition-all duration-300 hover-lift"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
@@ -77,7 +80,7 @@ const Navbar = () => {
               </Link>
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-sm font-bold text-primary-foreground hover:from-primary/90 hover:to-accent/90 transition-all duration-300 hover-lift glow-primary"
               >
                 Get Started
               </Link>
@@ -87,7 +90,7 @@ const Navbar = () => {
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-300"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -99,7 +102,7 @@ const Navbar = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl"
+          className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-3xl"
         >
           <div className="container mx-auto py-4 flex flex-col gap-3">
             {navLinks.map((link) => (
@@ -107,10 +110,10 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
-                className={`text-sm py-2 transition-colors ${
+                className={`text-sm py-2 font-medium transition-all duration-300 hover-lift ${
                   location.pathname === link.to
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary font-bold text-gradient"
+                    : "text-muted-foreground hover:text-foreground hover:text-gradient-subtle"
                 }`}
               >
                 {link.label}

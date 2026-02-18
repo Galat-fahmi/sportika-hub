@@ -7,8 +7,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
+import Blog from "./pages/Blog";
 import Sponsorship from "./pages/Sponsorship";
 import Beverages from "./pages/Beverages";
+import Players from "./pages/Players";
+import PlayerPortfolio from "./pages/PlayerPortfolio";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -16,6 +19,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AthleteDashboard from "./pages/AthleteDashboard";
 import OrganizerDashboard from "./pages/OrganizerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminAuth from "./pages/admin/AdminAuth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,8 +34,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
+            <Route path="/blog" element={<Blog />} />
             <Route path="/sponsorship" element={<Sponsorship />} />
             <Route path="/beverages" element={<Beverages />} />
+            <Route path="/players" element={<Players />} />
+            <Route path="/player/:playername" element={<PlayerPortfolio />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -52,6 +59,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/auth" element={<AdminAuth />} />
             <Route
               path="/admin/*"
               element={

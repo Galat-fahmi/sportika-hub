@@ -2,15 +2,31 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import StatsCard from "@/components/dashboard/StatsCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, DollarSign, BarChart3 } from "lucide-react";
-import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Calendar, 
+  Users, 
+  DollarSign, 
+  BarChart3, 
+  Plus, 
+  Eye, 
+  Trophy,
+  TrendingUp,
+  Clock,
+  MapPin,
+  ArrowRight,
+  Zap
+} from "lucide-react";
+import { format, isAfter, isBefore, addDays } from "date-fns";
+import { Link } from "react-router-dom";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
-  published: "bg-primary/20 text-primary",
-  ongoing: "bg-accent/20 text-accent",
+  published: "bg-green-500/20 text-green-600",
+  ongoing: "bg-primary/20 text-primary",
   completed: "bg-secondary text-secondary-foreground",
   cancelled: "bg-destructive/20 text-destructive",
 };
@@ -18,7 +34,7 @@ const statusColors: Record<string, string> = {
 const OrganizerOverview = () => {
   const { user } = useAuth();
 
-  const { data: events } = useQuery({
+  const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["organizer-events", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -32,56 +48,323 @@ const OrganizerOverview = () => {
     enabled: !!user,
   });
 
-  const { data: totalRegistrations } = useQuery({
-    queryKey: ["organizer-registrations-count", user?.id],
+  const { data: registrationsData, isLoading: registrationsLoading } = useQuery({
+    queryKey: ["organizer-registrations-details", user?.id],
     queryFn: async () => {
-      if (!events || events.length === 0) return 0;
+      if (!events || events.length === 0) return [];
       const eventIds = events.map((e) => e.id);
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from("event_registrations")
-        .select("*", { count: "exact", head: true })
+        .select("*, events(*)")
         .in("event_id", eventIds);
       if (error) throw error;
-      return count ?? 0;
+      return data;
     },
-    enabled: !!events,
+    enabled: !!events && events.length > 0,
   });
 
-  const publishedCount = events?.filter((e) => e.status === "published" || e.status === "ongoing").length ?? 0;
-  const totalRevenue = events?.reduce((sum, e) => sum + Number(e.registration_fee ?? 0), 0) ?? 0;
+  // Calculate metrics
+  const now = new Date();
+  const activeEvents = events?.filter((e) => e.status === "published" || e.status === "ongoing") ?? [];
+  const totalParticipants = registrationsData?.length ?? 0;
+  
+  // Calculate actual revenue based on paid registrations
+  const totalRevenue = registrationsData?.reduce((sum, reg: any) => {
+    const event = events?.find(e => e.id === reg.event_id);
+    return sum + Number(event?.registration_fee ?? 0);
+  }, 0) ?? 0;
+
+  // Upcoming matches (events starting within next 7 days)
+  const upcomingMatches = events?.filter((e) => {
+    const startDate = new Date(e.start_date);
+    return isAfter(startDate, now) && isBefore(startDate, addDays(now, 7));
+  }).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()) ?? [];
+
+  // Recent registrations
+  const recentRegistrations = registrationsData?.slice(0, 5) ?? [];
+
+  // Calculate registration rate for active events
+  const getRegistrationRate = (eventId: string, maxParticipants: number | null) => {
+    if (!maxParticipants) return 0;
+    const count = registrationsData?.filter((r: any) => r.event_id === eventId).length ?? 0;
+    return Math.round((count / maxParticipants) * 100);
+  };
+
+  if (eventsLoading || registrationsLoading) {
+    return <p className="text-muted-foreground">Loading dashboard...</p>;
+  }
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Manage your events and track performance.</p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Manage your events and track performance.</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Zap className="h-4 w-4 text-primary" />
+          <span>Last updated: {format(new Date(), "MMM d, h:mm a")}</span>
+        </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        <Button asChild className="gap-2">
+          <Link to="/organizer/events">
+            <Plus className="h-4 w-4" />
+            Create Event
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+        <Button variant="outline" asChild className="gap-2">
+          <Link to="/organizer/participants">
+            <Eye className="h-4 w-4" />
+            View Participants
+          </Link>
+        </Button>
+      </div>
+
+      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Total Events" value={events?.length ?? 0} icon={<Calendar className="h-5 w-5" />} />
-        <StatsCard title="Active Events" value={publishedCount} icon={<BarChart3 className="h-5 w-5" />} />
-        <StatsCard title="Total Registrations" value={totalRegistrations ?? 0} icon={<Users className="h-5 w-5" />} />
-        <StatsCard title="Avg Fee" value={`$${events?.length ? (totalRevenue / events.length).toFixed(0) : 0}`} icon={<DollarSign className="h-5 w-5" />} />
+        <StatsCard 
+          title="Total Active Events" 
+          value={activeEvents.length} 
+          icon={<Calendar className="h-5 w-5" />} 
+          description="Published & ongoing events"
+        />
+        <StatsCard 
+          title="Total Participants" 
+          value={totalParticipants} 
+          icon={<Users className="h-5 w-5" />} 
+          description="Across all your events"
+        />
+        <StatsCard 
+          title="Total Revenue" 
+          value={`$${totalRevenue.toLocaleString()}`} 
+          icon={<DollarSign className="h-5 w-5" />} 
+          description="From registrations"
+        />
+        <StatsCard 
+          title="Avg Participants" 
+          value={events?.length ? Math.round(totalParticipants / events.length) : 0} 
+          icon={<BarChart3 className="h-5 w-5" />} 
+          description="Per event"
+        />
       </div>
 
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Matches */}
+        <Card className="glass lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Upcoming Matches (Next 7 Days)
+              </CardTitle>
+              <CardDescription>Events starting soon</CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/organizer/events" className="gap-1">
+                View All <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {upcomingMatches.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground">No upcoming matches in the next 7 days.</p>
+                <Button size="sm" className="mt-4" asChild>
+                  <Link to="/organizer/events">Create Event</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingMatches.map((event) => {
+                  const registrationRate = getRegistrationRate(event.id, event.max_participants);
+                  const participantCount = registrationsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
+                  
+                  return (
+                    <div key={event.id} className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-medium text-foreground">{event.title}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(event.start_date), "MMM d, yyyy · h:mm a")}
+                            {event.location && (
+                              <>
+                                <span>·</span>
+                                <MapPin className="h-3.5 w-3.5" />
+                                {event.location}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className={statusColors[event.status]}>{event.status}</Badge>
+                      </div>
+                      
+                      {event.max_participants && (
+                        <div className="mt-3">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">Registration</span>
+                            <span className="font-medium">{participantCount}/{event.max_participants}</span>
+                          </div>
+                          <Progress value={registrationRate} className="h-2" />
+                        </div>
+                      )}
+                      
+                      {event.registration_fee && Number(event.registration_fee) > 0 && (
+                        <div className="mt-2 flex items-center gap-1 text-sm">
+                          <DollarSign className="h-4 w-4 text-green-500" />
+                          <span className="font-medium">{event.registration_fee}</span>
+                          <span className="text-muted-foreground">entry fee</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Recent Registrations
+            </CardTitle>
+            <CardDescription>Latest participant sign-ups</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentRegistrations.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground">No registrations yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentRegistrations.map((reg: any) => (
+                  <div key={reg.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{reg.events?.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(reg.registered_at), "MMM d, h:mm a")}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">New</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Summary */}
       <Card className="glass">
         <CardHeader>
-          <CardTitle className="text-lg">Recent Events</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Revenue Summary
+          </CardTitle>
+          <CardDescription>Financial overview of your events</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="p-4 rounded-lg bg-secondary/50 text-center">
+              <p className="text-3xl font-display font-bold text-green-600">
+                ${totalRevenue.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Total Revenue</p>
+            </div>
+            <div className="p-4 rounded-lg bg-secondary/50 text-center">
+              <p className="text-3xl font-display font-bold">
+                ${events?.length ? Math.round(totalRevenue / events.length) : 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Avg per Event</p>
+            </div>
+            <div className="p-4 rounded-lg bg-secondary/50 text-center">
+              <p className="text-3xl font-display font-bold">
+                ${totalParticipants > 0 ? Math.round(totalRevenue / totalParticipants) : 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Avg per Participant</p>
+            </div>
+            <div className="p-4 rounded-lg bg-secondary/50 text-center">
+              <p className="text-3xl font-display font-bold text-primary">
+                {activeEvents.length}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Active Events</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* All Events */}
+      <Card className="glass">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              All Events
+            </CardTitle>
+            <CardDescription>Complete list of your events</CardDescription>
+          </div>
+          <Button size="sm" asChild>
+            <Link to="/organizer/events" className="gap-1">
+              Manage Events <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent>
           {!events || events.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No events yet. Create your first event!</p>
+            <div className="text-center py-12">
+              <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-muted-foreground mb-3">No events created yet.</p>
+              <Button asChild>
+                <Link to="/organizer/events">Create Your First Event</Link>
+              </Button>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {events.slice(0, 6).map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{event.sport} · {format(new Date(event.start_date), "MMM d, yyyy")}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {events.slice(0, 6).map((event) => {
+                const participantCount = registrationsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
+                const isFull = event.max_participants && participantCount >= event.max_participants;
+                
+                return (
+                  <div key={event.id} className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge className={statusColors[event.status]}>{event.status}</Badge>
+                      {isFull && <Badge variant="destructive" className="text-xs">Full</Badge>}
+                    </div>
+                    <p className="font-medium text-foreground truncate">{event.title}</p>
+                    <p className="text-sm text-muted-foreground">{event.sport}</p>
+                    <div className="flex items-center gap-4 mt-3 text-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        {format(new Date(event.start_date), "MMM d")}
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        {participantCount}{event.max_participants ? `/${event.max_participants}` : ''}
+                      </div>
+                      {event.registration_fee && Number(event.registration_fee) > 0 && (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <DollarSign className="h-4 w-4" />
+                          {event.registration_fee}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Badge className={statusColors[event.status] ?? ""}>{event.status}</Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

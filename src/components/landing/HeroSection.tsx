@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { ArrowRight, Zap } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-sports.jpg";
 
 const HeroSection = () => {
@@ -9,18 +11,18 @@ const HeroSection = () => {
         <img
           src={heroImage}
           alt="Athletes in motion"
-          className="w-full h-full object-cover opacity-40"
+          className="w-full h-full object-cover opacity-30"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background/70" />
       </div>
 
       {/* Grid overlay */}
-      <div className="absolute inset-0 grid-pattern opacity-30" />
+      <div className="absolute inset-0 grid-pattern opacity-20" />
 
       {/* Glow orbs */}
-      <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[120px] animate-pulse-glow" />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-accent/10 blur-[120px] animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
+      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-primary/15 blur-[150px] animate-pulse" />
+      <div className="absolute bottom-1/3 right-1/4 w-[350px] h-[350px] rounded-full bg-accent/15 blur-[150px] animate-pulse" style={{ animationDelay: "1s" }} />
 
       <div className="relative z-10 container mx-auto text-center px-4">
         <motion.div
@@ -28,39 +30,40 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 mb-8">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs font-medium text-primary tracking-wide uppercase">
-              The Future of Sports Management
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 mb-8 backdrop-blur-sm">
+            <Zap className="h-4 w-4 text-primary animate-pulse" />
+            <span className="text-sm font-semibold text-primary tracking-wider uppercase">
+              Performance-Driven Sports Technology
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold leading-[0.9] tracking-tight mb-6">
-            <span className="text-foreground">Manage.</span>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black leading-[0.9] tracking-tighter mb-8">
+            <span className="text-foreground">ELEVATE</span>
             <br />
-            <span className="text-gradient">Compete.</span>
+            <span className="text-gradient">YOUR GAME</span>
             <br />
-            <span className="text-foreground">Dominate.</span>
+            <span className="text-foreground">TO THE NEXT LEVEL</span>
           </h1>
 
-          <p className="max-w-xl mx-auto text-lg text-muted-foreground mb-10">
-            The all-in-one platform for athletes, organizers, and administrators.
-            From registration to results — Sportika powers your entire sports ecosystem.
+          <p className="max-w-2xl mx-auto text-xl text-muted-foreground mb-12 leading-relaxed font-medium">
+            The ultimate sports technology platform connecting athletes, organizers, and brands. 
+            Engineered for peak performance and built for champions.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-all glow-primary"
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16">
+            <Link
+              to="/register"
+              className="group inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary to-accent px-8 py-4 text-lg font-bold text-primary-foreground hover:from-primary/90 hover:to-accent/90 transition-all duration-300 glow-primary shadow-2xl hover:shadow-primary/25"
             >
-              Start Free
-            </a>
-            <a
-              href="#features"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-8 py-3.5 text-base font-semibold text-secondary-foreground hover:bg-secondary/80 transition-all"
+              Join Sportika
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <Link
+              to="#cta"
+              className="inline-flex items-center gap-3 rounded-xl border-2 border-border bg-secondary/50 px-8 py-4 text-lg font-bold text-secondary-foreground hover:bg-secondary hover:border-primary/50 transition-all duration-300 backdrop-blur-sm"
             >
-              Explore Platform
-            </a>
+              Explore Solutions
+            </Link>
           </div>
         </motion.div>
 
@@ -69,18 +72,22 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto"
+          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
         >
           {[
-            { value: "10K+", label: "Athletes" },
-            { value: "500+", label: "Events" },
-            { value: "50+", label: "Sports" },
-            { value: "99.9%", label: "Uptime" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl md:text-3xl font-display font-bold text-gradient">{stat.value}</div>
-              <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{stat.label}</div>
-            </div>
+            { value: "50K+", label: "Active Athletes" },
+            { value: "1.2K+", label: "Events Managed" },
+            { value: "75+", label: "Countries" },
+            { value: "99.99%", label: "Platform Uptime" },
+          ].map((stat, index) => (
+            <motion.div 
+              key={stat.label} 
+              className="text-center p-6 rounded-2xl glass border border-border/30 hover:border-primary/40 transition-all duration-300"
+              whileHover={{ y: -5 }}
+            >
+              <div className="text-3xl md:text-4xl font-display font-black text-gradient mb-2">{stat.value}</div>
+              <div className="text-sm text-muted-foreground uppercase tracking-widest font-semibold">{stat.label}</div>
+            </motion.div>
           ))}
         </motion.div>
       </div>

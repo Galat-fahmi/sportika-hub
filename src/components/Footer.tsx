@@ -1,5 +1,5 @@
-import { Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/sportika-wolf-logo.png";
 
 const Footer = () => {
   return (
@@ -7,8 +7,8 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-10 mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-3 mb-4">
+              <img src={logo} alt="Sportika" className="h-8 w-8 object-contain" />
               <span className="font-display font-bold text-foreground">Sportika</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">

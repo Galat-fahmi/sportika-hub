@@ -6,10 +6,11 @@ interface StatsCardProps {
   value: string | number;
   icon: ReactNode;
   description?: string;
+  className?: string;
 }
 
-const StatsCard = ({ title, value, icon, description }: StatsCardProps) => (
-  <Card className="glass">
+const StatsCard = ({ title, value, icon, description, className = "" }: StatsCardProps) => (
+  <Card className={`glass ${className}`}>
     <CardContent className="p-6">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-muted-foreground">{title}</p>
