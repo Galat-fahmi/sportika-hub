@@ -116,7 +116,7 @@ const OrganizerParticipants = () => {
     mutationFn: async (registrationId: string) => {
       const { error } = await supabase
         .from("event_registrations")
-        .update({ checked_in: true, checked_in_at: new Date().toISOString() })
+        .update({ status: 'confirmed' } as any)
         .eq("id", registrationId);
       if (error) throw error;
     },
