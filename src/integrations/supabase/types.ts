@@ -17,37 +17,22 @@ export type Database = {
       event_registrations: {
         Row: {
           athlete_id: string
-          checked_in: boolean | null
-          checked_in_at: string | null
           event_id: string
           id: string
-          payment_amount: number | null
-          payment_date: string | null
-          payment_status: string | null
           registered_at: string
           status: string
         }
         Insert: {
           athlete_id: string
-          checked_in?: boolean | null
-          checked_in_at?: string | null
           event_id: string
           id?: string
-          payment_amount?: number | null
-          payment_date?: string | null
-          payment_status?: string | null
           registered_at?: string
           status?: string
         }
         Update: {
           athlete_id?: string
-          checked_in?: boolean | null
-          checked_in_at?: string | null
           event_id?: string
           id?: string
-          payment_amount?: number | null
-          payment_date?: string | null
-          payment_status?: string | null
           registered_at?: string
           status?: string
         }
@@ -149,58 +134,28 @@ export type Database = {
       }
       profiles: {
         Row: {
-          age: number | null
           avatar_url: string | null
-          bio: string | null
-          country: string | null
           created_at: string
           full_name: string | null
           id: string
-          social_facebook: string | null
-          social_instagram: string | null
-          social_twitter: string | null
-          social_website: string | null
-          sport: string | null
           updated_at: string
           user_id: string
-          verification_documents: Json | null
-          verification_status: string | null
         }
         Insert: {
-          age?: number | null
           avatar_url?: string | null
-          bio?: string | null
-          country?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
-          social_facebook?: string | null
-          social_instagram?: string | null
-          social_twitter?: string | null
-          social_website?: string | null
-          sport?: string | null
           updated_at?: string
           user_id: string
-          verification_documents?: Json | null
-          verification_status?: string | null
         }
         Update: {
-          age?: number | null
           avatar_url?: string | null
-          bio?: string | null
-          country?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
-          social_facebook?: string | null
-          social_instagram?: string | null
-          social_twitter?: string | null
-          social_website?: string | null
-          sport?: string | null
           updated_at?: string
           user_id?: string
-          verification_documents?: Json | null
-          verification_status?: string | null
         }
         Relationships: []
       }
