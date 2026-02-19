@@ -66,7 +66,7 @@ const AdminOverview = () => {
       const { data: pendingEvents, error: eventsError } = await supabase
         .from("events")
         .select("id")
-        .eq("status", "pending_review");
+        .eq("status", "draft");
       if (eventsError) throw eventsError;
       
       const { data: pendingRegs, error: regsError } = await supabase
