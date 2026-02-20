@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import StatsCard from "@/components/dashboard/StatsCard";
@@ -18,10 +18,12 @@ import {
   Clock,
   MapPin,
   ArrowRight,
-  Zap
+  Zap,
+  RefreshCw
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { Link } from "react-router-dom";
+import { getOrganizerDashboardOverview, getOrganizerParticipants } from "@/lib/organizer-api";
 
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -33,6 +35,7 @@ const statusColors: Record<string, string> = {
 
 const OrganizerOverview = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["organizer-events", user?.id],
@@ -48,31 +51,32 @@ const OrganizerOverview = () => {
     enabled: !!user,
   });
 
-  const { data: registrationsData, isLoading: registrationsLoading } = useQuery({
-    queryKey: ["organizer-registrations-details", user?.id],
+  const { data: dashboardOverview, isLoading: overviewLoading } = useQuery({
+    queryKey: ["organizer-dashboard-overview", user?.id],
     queryFn: async () => {
-      if (!events || events.length === 0) return [];
-      const eventIds = events.map((e) => e.id);
-      const { data, error } = await supabase
-        .from("event_registrations")
-        .select("*, events(*)")
-        .in("event_id", eventIds);
-      if (error) throw error;
-      return data;
+      if (!user?.id) return null;
+      return await getOrganizerDashboardOverview(user.id);
     },
-    enabled: !!events && events.length > 0,
+    enabled: !!user,
+    refetchInterval: 300000, // Refetch every 5 minutes
+  });
+
+  const { data: participantsData, isLoading: participantsLoading } = useQuery({
+    queryKey: ["organizer-participants", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return await getOrganizerParticipants(user.id);
+    },
+    enabled: !!user,
   });
 
   // Calculate metrics
   const now = new Date();
   const activeEvents = events?.filter((e) => e.status === "published" || e.status === "ongoing") ?? [];
-  const totalParticipants = registrationsData?.length ?? 0;
+  const totalParticipants = participantsData?.length ?? 0;
   
-  // Calculate actual revenue based on paid registrations
-  const totalRevenue = registrationsData?.reduce((sum, reg: any) => {
-    const event = events?.find(e => e.id === reg.event_id);
-    return sum + Number(event?.registration_fee ?? 0);
-  }, 0) ?? 0;
+  // Use dashboard data for revenue if available
+  const totalRevenue = dashboardOverview?.[0]?.total_revenue ?? 0;
 
   // Upcoming matches (events starting within next 7 days)
   const upcomingMatches = events?.filter((e) => {
@@ -81,16 +85,25 @@ const OrganizerOverview = () => {
   }).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()) ?? [];
 
   // Recent registrations
-  const recentRegistrations = registrationsData?.slice(0, 5) ?? [];
+  const recentRegistrations = participantsData?.slice(0, 5) ?? [];
 
   // Calculate registration rate for active events
   const getRegistrationRate = (eventId: string, maxParticipants: number | null) => {
     if (!maxParticipants) return 0;
-    const count = registrationsData?.filter((r: any) => r.event_id === eventId).length ?? 0;
+    const count = participantsData?.filter((r: any) => r.event_id === eventId).length ?? 0;
     return Math.round((count / maxParticipants) * 100);
   };
 
-  if (eventsLoading || registrationsLoading) {
+  // Function to refresh dashboard data
+  const refreshDashboard = async () => {
+    if (user?.id) {
+      await queryClient.invalidateQueries({ queryKey: ["organizer-dashboard-overview", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["organizer-participants", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["organizer-events", user?.id] });
+    }
+  };
+
+  if (eventsLoading || overviewLoading || participantsLoading) {
     return <p className="text-muted-foreground">Loading dashboard...</p>;
   }
 
@@ -102,9 +115,15 @@ const OrganizerOverview = () => {
           <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Manage your events and track performance.</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Zap className="h-4 w-4 text-primary" />
-          <span>Last updated: {format(new Date(), "MMM d, h:mm a")}</span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={refreshDashboard}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            <Zap className="h-4 w-4 text-primary inline mr-1" />
+            <span>Last updated: {dashboardOverview?.[0]?.last_updated ? format(new Date(dashboardOverview[0].last_updated), "MMM d, h:mm a") : format(new Date(), "MMM d, h:mm a")}</span>
+          </div>
         </div>
       </div>
 
@@ -129,27 +148,27 @@ const OrganizerOverview = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard 
           title="Total Active Events" 
-          value={activeEvents.length} 
+          value={dashboardOverview?.[0]?.active_events ?? activeEvents.length} 
           icon={<Calendar className="h-5 w-5" />} 
           description="Published & ongoing events"
         />
         <StatsCard 
           title="Total Participants" 
-          value={totalParticipants} 
+          value={dashboardOverview?.[0]?.total_participants ?? totalParticipants} 
           icon={<Users className="h-5 w-5" />} 
           description="Across all your events"
         />
         <StatsCard 
           title="Total Revenue" 
-          value={`$${totalRevenue.toLocaleString()}`} 
+          value={`$${(dashboardOverview?.[0]?.total_revenue ?? totalRevenue).toLocaleString()}`} 
           icon={<DollarSign className="h-5 w-5" />} 
           description="From registrations"
         />
         <StatsCard 
-          title="Avg Participants" 
-          value={events?.length ? Math.round(totalParticipants / events.length) : 0} 
-          icon={<BarChart3 className="h-5 w-5" />} 
-          description="Per event"
+          title="Upcoming Events" 
+          value={dashboardOverview?.[0]?.upcoming_events ?? 0} 
+          icon={<TrendingUp className="h-5 w-5" />} 
+          description="Scheduled in next 30 days"
         />
       </div>
 
@@ -254,9 +273,9 @@ const OrganizerOverview = () => {
                       <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{reg.events?.title}</p>
+                      <p className="font-medium text-sm truncate">{reg.event?.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(reg.registered_at), "MMM d, h:mm a")}
+                        {reg.created_at ? format(new Date(reg.created_at), "MMM d, h:mm a") : format(new Date(reg.registered_at), "MMM d, h:mm a")}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-xs">New</Badge>
@@ -281,25 +300,25 @@ const OrganizerOverview = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="p-4 rounded-lg bg-secondary/50 text-center">
               <p className="text-3xl font-display font-bold text-green-600">
-                ${totalRevenue.toLocaleString()}
+                ${(dashboardOverview?.[0]?.total_revenue ?? totalRevenue).toLocaleString()}
               </p>
               <p className="text-sm text-muted-foreground mt-1">Total Revenue</p>
             </div>
             <div className="p-4 rounded-lg bg-secondary/50 text-center">
               <p className="text-3xl font-display font-bold">
-                ${events?.length ? Math.round(totalRevenue / events.length) : 0}
+                ${events?.length ? Math.round((dashboardOverview?.[0]?.total_revenue ?? totalRevenue) / events.length) : 0}
               </p>
               <p className="text-sm text-muted-foreground mt-1">Avg per Event</p>
             </div>
             <div className="p-4 rounded-lg bg-secondary/50 text-center">
               <p className="text-3xl font-display font-bold">
-                ${totalParticipants > 0 ? Math.round(totalRevenue / totalParticipants) : 0}
+                ${totalParticipants > 0 ? Math.round((dashboardOverview?.[0]?.total_revenue ?? totalRevenue) / totalParticipants) : 0}
               </p>
               <p className="text-sm text-muted-foreground mt-1">Avg per Participant</p>
             </div>
             <div className="p-4 rounded-lg bg-secondary/50 text-center">
               <p className="text-3xl font-display font-bold text-primary">
-                {activeEvents.length}
+                {dashboardOverview?.[0]?.active_events ?? activeEvents.length}
               </p>
               <p className="text-sm text-muted-foreground mt-1">Active Events</p>
             </div>
@@ -335,7 +354,7 @@ const OrganizerOverview = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {events.slice(0, 6).map((event) => {
-                const participantCount = registrationsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
+                const participantCount = participantsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
                 const isFull = event.max_participants && participantCount >= event.max_participants;
                 
                 return (

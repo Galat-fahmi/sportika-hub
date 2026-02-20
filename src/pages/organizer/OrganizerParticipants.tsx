@@ -30,10 +30,13 @@ import {
   Calendar,
   Trophy,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
+import { getOrganizerParticipants, updateParticipantStatus, checkInParticipant as apiCheckInParticipant } from "@/lib/organizer-api";
+import { getEventParticipants, updateParticipantInfo } from "@/lib/organizer-participant-api";
 
 const OrganizerParticipants = () => {
   const { user } = useAuth();
@@ -79,11 +82,7 @@ const OrganizerParticipants = () => {
 
   const approveRegistration = useMutation({
     mutationFn: async (registrationId: string) => {
-      const { error } = await supabase
-        .from("event_registrations")
-        .update({ status: 'registered' })
-        .eq("id", registrationId);
-      if (error) throw error;
+      await updateParticipantInfo(registrationId, { status: 'confirmed' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
@@ -93,11 +92,7 @@ const OrganizerParticipants = () => {
 
   const rejectRegistration = useMutation({
     mutationFn: async (registrationId: string) => {
-      const { error } = await supabase
-        .from("event_registrations")
-        .update({ status: 'rejected' })
-        .eq("id", registrationId);
-      if (error) throw error;
+      await updateParticipantInfo(registrationId, { status: 'rejected' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
@@ -193,13 +188,19 @@ const OrganizerParticipants = () => {
 
   const stats = {
     total: filteredRegistrations.length,
-    approved: filteredRegistrations.filter((r: any) => r.status === 'registered').length,
+    approved: filteredRegistrations.filter((r: any) => r.status === 'confirmed' || r.status === 'registered').length,
     pending: filteredRegistrations.filter((r: any) => r.status === 'pending').length,
     paid: filteredRegistrations.filter((r: any) => r.payment_status === 'paid').length,
     checkedIn: filteredRegistrations.filter((r: any) => r.checked_in).length,
   };
 
   if (isLoading) return <p className="text-muted-foreground">Loading participants...</p>;
+
+  const refreshParticipants = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
+    await queryClient.invalidateQueries({ queryKey: ["organizer-events"] });
+    toast({ title: "Data refreshed" });
+  };
 
   return (
     <div className="space-y-8">
@@ -209,6 +210,10 @@ const OrganizerParticipants = () => {
           <p className="text-muted-foreground mt-1">Manage registrations, approvals, and check-ins.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={refreshParticipants} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
           <Button variant="outline" onClick={exportToCSV} className="gap-2">
             <FileSpreadsheet className="h-4 w-4" />
             Export CSV

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +40,114 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const AthleteSettings = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // Fetch security settings
+  const { data: securitySettings, isLoading: securityLoading } = useQuery({
+    queryKey: ["security-settings", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_security_settings")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch privacy settings
+  const { data: privacySettings, isLoading: privacyLoading } = useQuery({
+    queryKey: ["privacy-settings", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_privacy_settings")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch notification preferences
+  const { data: notificationSettings } = useQuery({
+    queryKey: ["notification-preferences", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Update security settings mutation
+  const updateSecurityMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      const { data, error } = await supabase.rpc(
+        "update_security_settings",
+        {
+          _user_id: user!.id,
+          ...updates
+        }
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["security-settings"] });
+      toast({ title: "Security settings updated" });
+    },
+  });
+
+  // Update privacy settings mutation
+  const updatePrivacyMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      const { data, error } = await supabase.rpc(
+        "update_privacy_settings",
+        {
+          _user_id: user!.id,
+          ...updates
+        }
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["privacy-settings"] });
+      toast({ title: "Privacy settings updated" });
+    },
+  });
+
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "request_account_deletion",
+        { _user_id: user!.id }
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Account deletion requested", 
+        description: "Your account will be deleted within 30 days.",
+        variant: "destructive"
+      });
+    },
+  });
+
   const [settings, setSettings] = useState({
     // Security
     twoFactorAuth: false,
@@ -64,18 +173,52 @@ const AthleteSettings = () => {
     timezone: 'UTC',
   });
 
+  // Sync with database settings
+  useEffect(() => {
+    if (securitySettings || privacySettings || notificationSettings) {
+      setSettings(prev => ({
+        ...prev,
+        twoFactorAuth: securitySettings?.two_factor_enabled ?? prev.twoFactorAuth,
+        biometricLogin: false, // Not stored in DB yet
+        loginNotifications: securitySettings?.login_alerts_enabled ?? prev.loginNotifications,
+        publicProfile: privacySettings?.profile_visibility === 'public' ?? prev.publicProfile,
+        showResults: privacySettings?.show_results ?? prev.showResults,
+        showRankings: privacySettings?.show_rankings ?? prev.showRankings,
+        allowTagging: true, // Not stored in DB yet
+        dataSharing: privacySettings?.allow_data_analytics ?? prev.dataSharing,
+        emailNotifications: notificationSettings?.enabled_email ?? prev.emailNotifications,
+        pushNotifications: notificationSettings?.enabled_push ?? prev.pushNotifications,
+        smsNotifications: notificationSettings?.enabled_sms ?? prev.smsNotifications,
+        marketingEmails: false, // Not stored in DB yet
+      }));
+    }
+  }, [securitySettings, privacySettings, notificationSettings]);
+
   const handleToggle = (key: keyof typeof settings) => {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    toast({ title: "Setting updated", description: "Your preference has been saved." });
+    const newValue = !settings[key];
+    setSettings(prev => ({ ...prev, [key]: newValue }));
+    
+    // Update in database based on setting type
+    if (['twoFactorAuth', 'loginNotifications'].includes(key)) {
+      const updates: any = {};
+      if (key === 'twoFactorAuth') updates._two_factor_enabled = newValue;
+      if (key === 'loginNotifications') updates._login_alerts_enabled = newValue;
+      updateSecurityMutation.mutate(updates);
+    } else if (['publicProfile', 'showResults', 'showRankings', 'dataSharing'].includes(key)) {
+      const updates: any = {};
+      if (key === 'publicProfile') updates._profile_visibility = newValue ? 'public' : 'private';
+      if (key === 'showResults') updates._show_results = newValue;
+      if (key === 'showRankings') updates._show_rankings = newValue;
+      if (key === 'dataSharing') updates._allow_data_analytics = newValue;
+      updatePrivacyMutation.mutate(updates);
+    } else {
+      // For settings not yet in DB, just show toast
+      toast({ title: "Setting updated", description: "Your preference has been saved." });
+    }
   };
 
   const handleDeleteAccount = () => {
-    // In a real app, this would call an API to delete the account
-    toast({ 
-      title: "Account deletion requested", 
-      description: "Your account will be deleted within 30 days.",
-      variant: "destructive"
-    });
+    deleteAccountMutation.mutate();
   };
 
   const SettingItem = ({ 

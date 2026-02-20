@@ -27,18 +27,14 @@ import { format, formatDistanceToNow } from "date-fns";
 
 interface Notification {
   id: string;
-  type: 'event_reminder' | 'registration_approval' | 'result_announcement' | 'platform_update' | 'sponsorship_offer';
+  notification_type: string;
   title: string;
   message: string;
-  read: boolean;
+  is_read: boolean;
   created_at: string;
-  metadata?: {
-    eventId?: string;
-    eventName?: string;
-    position?: number;
-    sponsorName?: string;
-    amount?: string;
-  };
+  action_url?: string | null;
+  action_label?: string | null;
+  metadata?: any;
 }
 
 const AthleteNotifications = () => {
@@ -46,95 +42,48 @@ const AthleteNotifications = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch notifications (simulated with mock data for now)
+  // Fetch notifications from Supabase
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["athlete-notifications", user?.id],
     queryFn: async () => {
-      // In a real app, this would fetch from a notifications table
-      // For now, we'll generate mock notifications based on user data
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          type: 'event_reminder',
-          title: 'Event Starting Soon',
-          message: 'The City Marathon starts in 24 hours. Don\'t forget to prepare!',
-          read: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-          metadata: { eventId: '1', eventName: 'City Marathon' }
-        },
-        {
-          id: '2',
-          type: 'registration_approval',
-          title: 'Registration Approved',
-          message: 'Your registration for Regional Championships has been approved.',
-          read: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-          metadata: { eventId: '2', eventName: 'Regional Championships' }
-        },
-        {
-          id: '3',
-          type: 'result_announcement',
-          title: 'Results Published',
-          message: 'Congratulations! You finished 2nd in the Spring Tournament.',
-          read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          metadata: { eventId: '3', eventName: 'Spring Tournament', position: 2 }
-        },
-        {
-          id: '4',
-          type: 'sponsorship_offer',
-          title: 'New Sponsorship Offer',
-          message: 'Nike has sent you a sponsorship proposal. Check it out!',
-          read: false,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-          metadata: { sponsorName: 'Nike', amount: '$5,000' }
-        },
-        {
-          id: '5',
-          type: 'platform_update',
-          title: 'New Feature Available',
-          message: 'You can now share your achievements directly to social media!',
-          read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), // 3 days ago
-        },
-        {
-          id: '6',
-          type: 'event_reminder',
-          title: 'Registration Closing Soon',
-          message: 'Registration for Summer League closes in 2 days.',
-          read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(), // 4 days ago
-          metadata: { eventId: '4', eventName: 'Summer League' }
-        },
-        {
-          id: '7',
-          type: 'result_announcement',
-          title: 'Certificate Available',
-          message: 'Your certificate for Winter Games is now available for download.',
-          read: true,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(), // 5 days ago
-          metadata: { eventId: '5', eventName: 'Winter Games', position: 3 }
-        },
-      ];
-      return mockNotifications;
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return data as Notification[];
     },
     enabled: !!user,
   });
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      // In a real app, this would update the database
-      // await supabase.from('notifications').update({ read: true }).eq('id', notificationId);
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("id", notificationId);
+      
+      if (error) throw error;
       return notificationId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["athlete-notifications"] });
+      toast({ title: "Notification marked as read" });
     },
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      // In a real app, this would update all unread notifications
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("user_id", user!.id)
+        .eq("is_read", false);
+      
+      if (error) throw error;
       return true;
     },
     onSuccess: () => {
@@ -145,7 +94,12 @@ const AthleteNotifications = () => {
 
   const deleteNotificationMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      // In a real app, this would delete from the database
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
+      
+      if (error) throw error;
       return notificationId;
     },
     onSuccess: () => {
@@ -158,14 +112,22 @@ const AthleteNotifications = () => {
     switch (type) {
       case 'event_reminder':
         return <Calendar className="h-5 w-5 text-blue-500" />;
-      case 'registration_approval':
+      case 'registration_approved':
+      case 'registration_rejected':
+      case 'registration_waitlisted':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'result_announcement':
+      case 'result_announced':
+      case 'certificate_issued':
+      case 'achievement_earned':
         return <Trophy className="h-5 w-5 text-yellow-500" />;
       case 'sponsorship_offer':
         return <Gift className="h-5 w-5 text-purple-500" />;
       case 'platform_update':
+      case 'system_alert':
         return <Info className="h-5 w-5 text-cyan-500" />;
+      case 'payment_confirmed':
+      case 'payment_failed':
+        return <DollarSign className="h-5 w-5 text-green-500" />;
       default:
         return <Bell className="h-5 w-5 text-gray-500" />;
     }
@@ -174,15 +136,30 @@ const AthleteNotifications = () => {
   const getNotificationBadge = (type: string) => {
     switch (type) {
       case 'event_reminder':
+      case 'event_cancelled':
+      case 'event_updated':
         return <Badge variant="secondary" className="text-xs">Event</Badge>;
-      case 'registration_approval':
+      case 'registration_approved':
         return <Badge className="bg-green-500/20 text-green-600 text-xs">Approved</Badge>;
-      case 'result_announcement':
+      case 'registration_rejected':
+        return <Badge className="bg-red-500/20 text-red-600 text-xs">Rejected</Badge>;
+      case 'registration_waitlisted':
+        return <Badge className="bg-orange-500/20 text-orange-600 text-xs">Waitlisted</Badge>;
+      case 'result_announced':
+      case 'certificate_issued':
+      case 'achievement_earned':
         return <Badge className="bg-yellow-500/20 text-yellow-600 text-xs">Results</Badge>;
       case 'sponsorship_offer':
         return <Badge className="bg-purple-500/20 text-purple-600 text-xs">Sponsorship</Badge>;
       case 'platform_update':
+      case 'system_alert':
         return <Badge className="bg-cyan-500/20 text-cyan-600 text-xs">Update</Badge>;
+      case 'payment_confirmed':
+        return <Badge className="bg-green-500/20 text-green-600 text-xs">Payment</Badge>;
+      case 'payment_failed':
+        return <Badge className="bg-red-500/20 text-red-600 text-xs">Payment Failed</Badge>;
+      case 'message':
+        return <Badge className="bg-blue-500/20 text-blue-600 text-xs">Message</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">General</Badge>;
     }
@@ -190,11 +167,40 @@ const AthleteNotifications = () => {
 
   const filteredNotifications = notifications?.filter((n: Notification) => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'unread') return !n.read;
-    return n.type === activeTab;
+    if (activeTab === 'unread') return !n.is_read;
+    return n.notification_type === activeTab;
   });
 
-  const unreadCount = notifications?.filter((n: Notification) => !n.read).length ?? 0;
+  const unreadCount = notifications?.filter((n: Notification) => !n.is_read).length ?? 0;
+
+  // Fetch notification preferences
+  const { data: preferences } = useQuery({
+    queryKey: ["notification-preferences", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      
+      if (error) {
+        // If no preferences exist, return defaults
+        if (error.code === 'PGRST116') {
+          return {
+            event_reminders_enabled: true,
+            registration_updates_enabled: true,
+            result_announcements_enabled: true,
+            achievements_enabled: true,
+            sponsorship_offers_enabled: true,
+            platform_updates_enabled: false,
+          };
+        }
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!user,
+  });
 
   if (isLoading) return <p className="text-muted-foreground">Loading notifications…</p>;
 
@@ -240,7 +246,7 @@ const AthleteNotifications = () => {
           <CardContent className="p-4 text-center">
             <Calendar className="h-5 w-5 text-blue-500 mx-auto mb-2" />
             <p className="text-xl font-display font-bold">
-              {notifications?.filter((n: Notification) => n.type === 'event_reminder').length ?? 0}
+              {notifications?.filter((n: Notification) => n.notification_type === 'event_reminder').length ?? 0}
             </p>
             <p className="text-xs text-muted-foreground">Events</p>
           </CardContent>
@@ -249,7 +255,7 @@ const AthleteNotifications = () => {
           <CardContent className="p-4 text-center">
             <Trophy className="h-5 w-5 text-yellow-500 mx-auto mb-2" />
             <p className="text-xl font-display font-bold">
-              {notifications?.filter((n: Notification) => n.type === 'result_announcement').length ?? 0}
+              {notifications?.filter((n: Notification) => n.notification_type === 'result_announced').length ?? 0}
             </p>
             <p className="text-xs text-muted-foreground">Results</p>
           </CardContent>
@@ -258,7 +264,7 @@ const AthleteNotifications = () => {
           <CardContent className="p-4 text-center">
             <Gift className="h-5 w-5 text-purple-500 mx-auto mb-2" />
             <p className="text-xl font-display font-bold">
-              {notifications?.filter((n: Notification) => n.type === 'sponsorship_offer').length ?? 0}
+              {notifications?.filter((n: Notification) => n.notification_type === 'sponsorship_offer').length ?? 0}
             </p>
             <p className="text-xs text-muted-foreground">Offers</p>
           </CardContent>
@@ -300,34 +306,34 @@ const AthleteNotifications = () => {
                 <Card 
                   key={notification.id} 
                   className={`glass transition-all hover:border-primary/30 ${
-                    !notification.read ? 'bg-primary/5 border-primary/20' : ''
+                    !notification.is_read ? 'bg-primary/5 border-primary/20' : ''
                   }`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
+                        {getNotificationIcon(notification.notification_type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className={`font-semibold ${!notification.read ? 'text-foreground' : ''}`}>
+                              <h3 className={`font-semibold ${!notification.is_read ? 'text-foreground' : ''}`}>
                                 {notification.title}
                               </h3>
-                              {!notification.read && (
+                              {!notification.is_read && (
                                 <span className="w-2 h-2 rounded-full bg-primary" />
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground">
                               {notification.message}
                             </p>
-                            {notification.metadata && (
+                            {notification.metadata && Object.keys(notification.metadata).length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-2">
-                                {notification.metadata.eventName && (
+                                {notification.metadata.event_name && (
                                   <Badge variant="outline" className="text-xs">
                                     <MapPin className="h-3 w-3 mr-1" />
-                                    {notification.metadata.eventName}
+                                    {notification.metadata.event_name}
                                   </Badge>
                                 )}
                                 {notification.metadata.position && (
@@ -339,10 +345,10 @@ const AthleteNotifications = () => {
                                      `${notification.metadata.position}th`} Place
                                   </Badge>
                                 )}
-                                {notification.metadata.sponsorName && (
+                                {notification.metadata.sponsor_name && (
                                   <Badge variant="outline" className="text-xs">
                                     <Star className="h-3 w-3 mr-1" />
-                                    {notification.metadata.sponsorName}
+                                    {notification.metadata.sponsor_name}
                                   </Badge>
                                 )}
                                 {notification.metadata.amount && (
@@ -355,7 +361,7 @@ const AthleteNotifications = () => {
                             )}
                           </div>
                           <div className="text-right flex-shrink-0">
-                            {getNotificationBadge(notification.type)}
+                            {getNotificationBadge(notification.notification_type)}
                             <p className="text-xs text-muted-foreground mt-1">
                               {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                             </p>
@@ -363,7 +369,7 @@ const AthleteNotifications = () => {
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
-                        {!notification.read && (
+                        {!notification.is_read && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -411,7 +417,9 @@ const AthleteNotifications = () => {
                   <p className="text-sm text-muted-foreground">Upcoming events and registration deadlines</p>
                 </div>
               </div>
-              <Badge>Enabled</Badge>
+              <Badge variant={preferences?.event_reminders_enabled ? 'default' : 'outline'}>
+                {preferences?.event_reminders_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -421,7 +429,9 @@ const AthleteNotifications = () => {
                   <p className="text-sm text-muted-foreground">Approval status and confirmations</p>
                 </div>
               </div>
-              <Badge>Enabled</Badge>
+              <Badge variant={preferences?.registration_updates_enabled ? 'default' : 'outline'}>
+                {preferences?.registration_updates_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -431,7 +441,9 @@ const AthleteNotifications = () => {
                   <p className="text-sm text-muted-foreground">Result announcements and certificate availability</p>
                 </div>
               </div>
-              <Badge>Enabled</Badge>
+              <Badge variant={preferences?.result_announcements_enabled ? 'default' : 'outline'}>
+                {preferences?.result_announcements_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -441,7 +453,9 @@ const AthleteNotifications = () => {
                   <p className="text-sm text-muted-foreground">New sponsorship opportunities</p>
                 </div>
               </div>
-              <Badge>Enabled</Badge>
+              <Badge variant={preferences?.sponsorship_offers_enabled ? 'default' : 'outline'}>
+                {preferences?.sponsorship_offers_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
               <div className="flex items-center gap-3">
@@ -451,7 +465,9 @@ const AthleteNotifications = () => {
                   <p className="text-sm text-muted-foreground">New features and platform news</p>
                 </div>
               </div>
-              <Badge variant="outline">Disabled</Badge>
+              <Badge variant={preferences?.platform_updates_enabled ? 'default' : 'outline'}>
+                {preferences?.platform_updates_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
           </div>
         </CardContent>

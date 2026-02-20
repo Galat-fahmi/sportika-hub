@@ -26,9 +26,11 @@ import {
   Calendar,
   Shield,
   MoreHorizontal,
-  Filter
+  Filter,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
+import { getAdminDashboardOverview } from "@/lib/admin-api";
 
 interface UserActivity {
   id: string;
@@ -70,9 +72,24 @@ const AdminUsers = () => {
     },
   });
 
+  // Fetch admin dashboard overview
+  const { data: dashboardOverview } = useQuery({
+    queryKey: ["admin-dashboard-overview"],
+    queryFn: async () => {
+      return await getAdminDashboardOverview();
+    },
+  });
+
   // Separate athletes and organizers
   const athletes = profiles?.filter((p: any) => p.user_roles?.role === "athlete") ?? [];
   const organizers = profiles?.filter((p: any) => p.user_roles?.role === "organizer") ?? [];
+
+  const refreshUserData = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin-all-profiles"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin-all-events"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin-dashboard-overview"] });
+    toast({ title: "User data refreshed" });
+  };
 
   // Filter users based on search and status
   const filterUsers = (users: any[]) => {
@@ -292,9 +309,17 @@ const AdminUsers = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">User Management</h1>
-        <p className="text-muted-foreground mt-1">Manage athletes, organizers, and their accounts.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">User Management</h1>
+          <p className="text-muted-foreground mt-1">Manage athletes, organizers, and their accounts.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={refreshUserData} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}

@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { 
   BarChart, 
   Bar, 
@@ -28,6 +29,7 @@ import {
   Calendar, 
   DollarSign,
   MapPin,
+  RefreshCw,
   Trophy,
   Activity,
   ArrowUpRight,
@@ -36,6 +38,7 @@ import {
   Target
 } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, subDays } from "date-fns";
+import { getAdminDashboardOverview, getUserAnalytics, getEventAnalytics, getFinanceSummary } from "@/lib/admin-api";
 
 const COLORS = ["hsl(145,100%,45%)", "hsl(190,100%,50%)", "hsl(225,25%,30%)", "hsl(0,72%,51%)", "hsl(40,100%,50%)"];
 const SPORT_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316", "#ec4899"];
@@ -224,12 +227,30 @@ const AdminAnalytics = () => {
 
   const hasData = (events?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
 
+  const queryClient = useQueryClient();
+
+  const refreshAnalytics = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin-analytics-profiles"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin-analytics-roles"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin-analytics-events"] });
+    await queryClient.invalidateQueries({ queryKey: ["admin-analytics-registrations"] });
+    toast({ title: "Analytics data refreshed" });
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Platform Analytics</h1>
-        <p className="text-muted-foreground mt-1">Comprehensive insights across all platform activities.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Platform Analytics</h1>
+          <p className="text-muted-foreground mt-1">Comprehensive insights across all platform activities.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={refreshAnalytics} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       {/* Key Metrics */}

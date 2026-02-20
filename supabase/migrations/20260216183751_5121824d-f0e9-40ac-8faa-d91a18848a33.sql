@@ -104,3 +104,32 @@ CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Create storage bucket for profile photos
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('profiles', 'profiles', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow authenticated users to upload to profiles bucket
+CREATE POLICY "Authenticated users can upload profile photos"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (bucket_id = 'profiles' AND name LIKE 'avatars/%');
+
+-- Allow public access to view profile photos
+CREATE POLICY "Profile photos are publicly accessible"
+  ON storage.objects FOR SELECT
+  TO public
+  USING (bucket_id = 'profiles');
+
+-- Allow users to update their own photos
+CREATE POLICY "Users can update their own profile photos"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (bucket_id = 'profiles' AND owner = auth.uid());
+
+-- Allow users to delete their own photos
+CREATE POLICY "Users can delete their own profile photos"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'profiles' AND owner = auth.uid());

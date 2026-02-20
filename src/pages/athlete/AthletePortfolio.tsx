@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,28 +40,23 @@ import {
 interface PortfolioData {
   id: string;
   user_id: string;
-  full_name: string;
-  photo: string | null;
-  sport: string;
-  country: string;
-  bio: string;
-  career_summary: string;
-  ranking: number | null;
-  is_public: boolean;
-  slug: string;
-  stats: {
-    events: number;
-    wins: number;
-    win_rate: string;
-    ranking_position: number;
-  };
-  achievements: Achievement[];
-  gallery: GalleryImage[];
-  social_links: {
-    instagram?: string;
-    twitter?: string;
-    website?: string;
-  };
+  slug: string | null;
+  title: string | null;
+  tagline: string | null;
+  bio: string | null;
+  cover_image_url: string | null;
+  profile_image_url: string | null;
+  theme_color: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  social_links: any;
+  visibility: string | null;
+  sports: string[];
+  specialties: string[];
+  views_count: number;
+  is_verified: boolean;
+  published_at: string | null;
 }
 
 interface Achievement {
@@ -77,53 +74,65 @@ interface GalleryImage {
   uploaded_at: string;
 }
 
-// Mock data - replace with actual API call
+// Fetch portfolio from Supabase with auto-create
 const usePortfolio = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   return useQuery({
-    queryKey: ['athlete-portfolio'],
+    queryKey: ['athlete-portfolio', user?.id],
     queryFn: async () => {
-      // TODO: Replace with actual API call
-      // const { data, error } = await supabase
-      //   .from('athlete_profiles')
-      //   .select('*')
-      //   .single();
-      // if (error) throw error;
-      // return data as PortfolioData;
+      if (!user) throw new Error("User not authenticated");
       
-      // Return demo data for now
-      return {
-        id: "1",
-        user_id: "user-1",
-        full_name: "Alex Johnson",
-        photo: null,
-        sport: "Tennis",
-        country: "United States",
-        bio: "Professional tennis player with 5 years of competitive experience.",
-        career_summary: "Started playing at age 8, turned pro in 2019. Multiple regional championships.",
-        ranking: 15,
-        is_public: true,
-        slug: "alex-johnson",
-        stats: {
-          events: 45,
-          wins: 32,
-          win_rate: "71%",
-          ranking_position: 15
-        },
-        achievements: [
-          { id: "1", title: "Regional Champion", year: "2023", category: "Regional", description: "Won the regional tennis championship" },
-          { id: "2", title: "MVP Award", year: "2022", category: "Individual", description: "Most valuable player of the season" }
-        ],
-        gallery: [],
-        social_links: {
-          instagram: "@alexjohnson",
-          twitter: "@alexj_tennis"
-        }
-      } as PortfolioData;
-    }
+      const { data, error } = await supabase
+        .from('athlete_portfolios')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      // If no portfolio exists, fetch profile data and create one
+      if (error && error.code === 'PGRST116') {
+        // Get profile data to seed the portfolio
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url, bio, sport, social_instagram, social_twitter, social_facebook, social_website')
+          .eq('user_id', user.id)
+          .single();
+        
+        // Create portfolio with profile data
+        const { data: newPortfolio, error: createError } = await supabase
+          .from('athlete_portfolios')
+          .insert({
+            user_id: user.id,
+            title: profile?.full_name || 'My Portfolio',
+            bio: profile?.bio,
+            profile_image_url: profile?.avatar_url,
+            sports: profile?.sport ? [profile.sport] : [],
+            social_links: {
+              instagram: profile?.social_instagram,
+              twitter: profile?.social_twitter,
+              facebook: profile?.social_facebook,
+              website: profile?.social_website,
+            },
+            visibility: 'public',
+            slug: user.id.slice(0, 8),
+          })
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        return newPortfolio as PortfolioData;
+      }
+      
+      if (error) throw error;
+      return data as PortfolioData;
+    },
+    enabled: !!user,
   });
 };
 
 const AthletePortfolio = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: portfolio, isLoading } = usePortfolio();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,17 +150,63 @@ const AthletePortfolio = () => {
   // Mutations
   const updatePortfolio = useMutation({
     mutationFn: async (data: Partial<PortfolioData>) => {
-      // TODO: Replace with actual API call
-      // const { error } = await supabase
-      //   .from('athlete_profiles')
-      //   .update(data)
-      //   .eq('id', portfolio?.id);
-      // if (error) throw error;
+      if (!user) throw new Error("User not authenticated");
+      
+      const { data: result, error } = await supabase.rpc(
+        "update_athlete_portfolio",
+        {
+          _user_id: user.id,
+          _slug: data.slug,
+          _title: data.title,
+          _tagline: data.tagline,
+          _bio: data.bio,
+          _cover_image_url: data.cover_image_url,
+          _profile_image_url: data.profile_image_url,
+          _theme_color: data.theme_color,
+          _email: data.email,
+          _phone: data.phone,
+          _website: data.website,
+          _social_links: data.social_links,
+          _visibility: data.visibility as any,
+          _sports: data.sports,
+          _specialties: data.specialties,
+        }
+      );
+      
+      if (error) throw error;
+      
+      // Sync relevant fields back to the main profile
+      if (data.title || data.bio || data.profile_image_url || data.sports) {
+        const profileUpdates: any = {};
+        if (data.title) profileUpdates.full_name = data.title;
+        if (data.bio) profileUpdates.bio = data.bio;
+        if (data.profile_image_url) profileUpdates.avatar_url = data.profile_image_url;
+        if (data.sports && data.sports.length > 0) profileUpdates.sport = data.sports[0];
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('user_id', user.id);
+        
+        if (profileError) {
+          console.error('Error syncing profile:', profileError);
+        }
+      }
+      
       toast({ title: "Portfolio updated successfully!" });
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['athlete-portfolio'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       setIsEditing(false);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error updating portfolio", 
+        description: error.message,
+        variant: "destructive"
+      });
     }
   });
 
@@ -159,8 +214,8 @@ const AthletePortfolio = () => {
     updatePortfolio.mutate(formData);
   };
 
-  const handleTogglePrivacy = (isPublic: boolean) => {
-    updatePortfolio.mutate({ is_public: isPublic });
+  const handleTogglePrivacy = (visibility: string) => {
+    updatePortfolio.mutate({ visibility: visibility as any });
   };
 
   const handleCopyLink = () => {
@@ -243,8 +298,8 @@ const AthletePortfolio = () => {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${portfolio?.is_public ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
-                {portfolio?.is_public ? (
+              <div className={`p-2 rounded-lg ${portfolio?.visibility === 'public' ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
+                {portfolio?.visibility === 'public' ? (
                   <Globe className="h-5 w-5 text-green-600" />
                 ) : (
                   <Lock className="h-5 w-5 text-yellow-600" />
@@ -252,18 +307,18 @@ const AthletePortfolio = () => {
               </div>
               <div>
                 <p className="font-medium text-foreground">
-                  {portfolio?.is_public ? "Public Profile" : "Private Profile"}
+                  {portfolio?.visibility === 'public' ? "Public Profile" : "Private Profile"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {portfolio?.is_public 
+                  {portfolio?.visibility === 'public' 
                     ? "Your profile is visible on the public players listing" 
                     : "Your profile is hidden from public view"}
                 </p>
               </div>
             </div>
             <Switch
-              checked={portfolio?.is_public}
-              onCheckedChange={handleTogglePrivacy}
+              checked={portfolio?.visibility === 'public'}
+              onCheckedChange={(checked) => handleTogglePrivacy(checked ? 'public' : 'private')}
             />
           </div>
         </CardContent>
@@ -288,9 +343,9 @@ const AthletePortfolio = () => {
               <CardContent className="text-center">
                 <div className="relative inline-block">
                   <Avatar className="h-32 w-32 mx-auto border-4 border-primary/10">
-                    <AvatarImage src={portfolio?.photo || undefined} alt={portfolio?.full_name} />
+                    <AvatarImage src={portfolio?.profile_image_url || undefined} alt={portfolio?.title || 'Athlete'} />
                     <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
-                      {portfolio?.full_name?.split(' ').map(n => n[0]).join('')}
+                      {portfolio?.title?.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
@@ -326,28 +381,28 @@ const AthletePortfolio = () => {
                     <Label>Full Name</Label>
                     {isEditing ? (
                       <Input
-                        value={formData.full_name || portfolio?.full_name}
-                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                        value={formData.title || portfolio?.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1 text-foreground">{portfolio?.full_name}</p>
+                      <p className="mt-1 text-foreground">{portfolio?.title}</p>
                     )}
                   </div>
                   <div>
                     <Label>Sport</Label>
                     {isEditing ? (
                       <Input
-                        value={formData.sport || portfolio?.sport}
-                        onChange={(e) => setFormData({ ...formData, sport: e.target.value })}
+                        value={formData.sports?.[0] || portfolio?.sports?.[0]}
+                        onChange={(e) => setFormData({ ...formData, sports: [e.target.value] })}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1 text-foreground">{portfolio?.sport}</p>
+                      <p className="mt-1 text-foreground">{portfolio?.sports?.[0]}</p>
                     )}
                   </div>
                   <div>
-                    <Label>Country</Label>
+                    <Label>Location</Label>
                     {isEditing ? (
                       <Input
                         value={formData.country || portfolio?.country}
@@ -359,15 +414,15 @@ const AthletePortfolio = () => {
                     )}
                   </div>
                   <div>
-                    <Label>Current Ranking</Label>
-                    <p className="mt-1 text-foreground">#{portfolio?.ranking || "N/A"}</p>
+                    <Label>About</Label>
+                    <p className="mt-1 text-foreground">{portfolio?.bio?.substring(0, 50)}{portfolio?.bio && portfolio?.bio.length > 50 ? '...' : ''}</p>
                   </div>
                 </div>
 
                 <Separator />
 
                 <div>
-                  <Label>Bio</Label>
+                  <Label>Description</Label>
                   {isEditing ? (
                     <Textarea
                       value={formData.bio || portfolio?.bio}
@@ -381,16 +436,16 @@ const AthletePortfolio = () => {
                 </div>
 
                 <div>
-                  <Label>Career Summary</Label>
+                  <Label>Specialties</Label>
                   {isEditing ? (
                     <Textarea
-                      value={formData.career_summary || portfolio?.career_summary}
-                      onChange={(e) => setFormData({ ...formData, career_summary: e.target.value })}
+                      value={formData.specialties?.join(', ') || portfolio?.specialties?.join(', ')}
+                      onChange={(e) => setFormData({ ...formData, specialties: e.target.value.split(',').map(s => s.trim()) })}
                       className="mt-1"
-                      rows={3}
+                      rows={2}
                     />
                   ) : (
-                    <p className="mt-1 text-foreground">{portfolio?.career_summary}</p>
+                    <p className="mt-1 text-foreground">{portfolio?.specialties?.join(', ')}</p>
                   )}
                 </div>
 
@@ -695,10 +750,10 @@ const AthletePortfolio = () => {
           <div className="pt-4">
             <div className="p-6 rounded-lg bg-secondary/30 text-center">
               <Avatar className="h-24 w-24 mx-auto mb-4">
-                <AvatarImage src={portfolio?.photo || undefined} />
-                <AvatarFallback className="text-2xl">{portfolio?.full_name?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                <AvatarImage src={portfolio?.profile_image_url || undefined} />
+                <AvatarFallback className="text-2xl">{portfolio?.title?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
-              <h2 className="text-2xl font-bold">{portfolio?.full_name}</h2>
+              <h2 className="text-2xl font-bold">{portfolio?.title}</h2>
               <p className="text-muted-foreground">{portfolio?.sport} • {portfolio?.country}</p>
               <div className="flex justify-center gap-2 mt-4">
                 <Button variant="outline" size="sm" onClick={handleCopyLink}>

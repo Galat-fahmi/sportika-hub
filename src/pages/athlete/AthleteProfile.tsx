@@ -25,7 +25,6 @@ import {
   CheckCircle, 
   Clock, 
   AlertCircle,
-  Upload,
   X
 } from "lucide-react";
 
@@ -124,7 +123,17 @@ const AthleteProfile = () => {
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
-      toast({ title: "Photo uploaded successfully!" });
+      
+      // Auto-save the avatar URL to profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user!.id);
+      
+      if (updateError) throw updateError;
+      
+      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      toast({ title: "Photo uploaded and saved!" });
     } catch (error) {
       toast({ title: "Failed to upload photo", variant: "destructive" });
     } finally {
@@ -183,7 +192,7 @@ const AthleteProfile = () => {
           <CardContent className="space-y-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-4 border-border shadow-lg">
+                <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center overflow-hidden border-4 border-border shadow-lg cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   ) : (
@@ -201,8 +210,6 @@ const AthleteProfile = () => {
                     <Camera className="h-5 w-5" />
                   )}
                 </button>
-              </div>
-              <div className="flex-1">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -210,17 +217,10 @@ const AthleteProfile = () => {
                   onChange={handleAvatarUpload}
                   className="hidden"
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  size="lg"
-                  className="gap-2 px-6 py-3 text-base"
-                >
-                  <Upload className="h-5 w-5" />
-                  {uploading ? "Uploading..." : "Upload Photo"}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-3">
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">
+                  Click the camera icon to upload a new photo.<br />
                   Recommended: Square image, at least 400x400px
                 </p>
               </div>

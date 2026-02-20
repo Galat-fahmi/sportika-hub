@@ -26,9 +26,11 @@ import {
   MapPin,
   DollarSign,
   Shield,
-  Lock
+  Lock,
+  RefreshCw
 } from "lucide-react";
 import { format } from "date-fns";
+import { getAdminDashboardOverview, getEventAnalytics } from "@/lib/admin-api";
 import type { Database } from "@/integrations/supabase/types";
 
 type EventStatus = Database["public"]["Enums"]["event_status"];
@@ -284,12 +286,25 @@ const AdminEvents = () => {
   const flaggedCount = events?.filter(e => e.is_flagged).length ?? 0;
   const activeCount = events?.filter(e => ["published", "ongoing"].includes(e.status)).length ?? 0;
 
+  const refreshEventData = async () => {
+    await qc.invalidateQueries({ queryKey: ["admin-all-events"] });
+    toast({ title: "Event data refreshed" });
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-foreground">Event Management & Approvals</h1>
-        <p className="text-muted-foreground mt-1">Review, approve, and monitor all platform events.</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground">Event Management & Approvals</h1>
+          <p className="text-muted-foreground mt-1">Review, approve, and monitor all platform events.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={refreshEventData} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh Data
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
