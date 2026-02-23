@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +33,7 @@ import {
   Globe,
   MapPin
 } from "lucide-react";
+import { getOrganizerProfile, updateOrganizerProfile, uploadProfilePicture } from "@/lib/organizer-profile-api";
 
 interface TeamMember {
   id: string;
@@ -52,33 +53,82 @@ const OrganizerSettings = () => {
   
   // Profile form state
   const [profile, setProfile] = useState({
-    organizationName: "Sports Events Co.",
-    contactName: "John Smith",
+    organizationName: "",
+    contactName: "",
     email: user?.email || "",
-    phone: "+1 (555) 123-4567",
-    website: "https://sportsevents.co",
-    address: "123 Sports Ave, New York, NY 10001",
-    bio: "Professional sports event management company with 10+ years of experience organizing tournaments and competitions.",
+    phone: "",
+    website: "",
+    address: "",
+    bio: "",
+    avatar_url: ""
+  });
+
+  // Fetch the actual profile data
+  const { data: profileData, isLoading: profileLoading } = useQuery({
+    queryKey: ["organizer-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      return await getOrganizerProfile(user.id);
+    },
+    enabled: !!user,
+    onSuccess: (data) => {
+      if (data) {
+        setProfile({
+          organizationName: data.full_name || "",
+          contactName: data.full_name || "",
+          email: user?.email || "",
+          phone: "",
+          website: "",
+          address: "",
+          bio: "",
+          avatar_url: data.avatar_url || ""
+        });
+      }
+    }
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (formData: typeof profile) => {
+      if (!user?.id) throw new Error("User not authenticated");
+      
+      return await updateOrganizerProfile(user.id, {
+        full_name: formData.contactName || formData.organizationName,
+        avatar_url: formData.avatar_url,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Profile updated successfully!" });
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["organizer-profile", user?.id] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to update profile", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
   });
 
   // Banking form state
   const [banking, setBanking] = useState({
-    accountHolder: "Sports Events Co.",
-    bankName: "Chase Bank",
-    accountNumber: "****4567",
-    routingNumber: "****8901",
-    accountType: "business",
-    paypalEmail: "payments@sportsevents.co",
-    stripeConnected: true,
+    accountHolder: profileData?.full_name || "",
+    bankName: "",
+    accountNumber: "",
+    routingNumber: "",
+    accountType: "business" as const,
+    paypalEmail: user?.email || "",
+    stripeConnected: false,
   });
 
   // Branding form state
   const [branding, setBranding] = useState({
     primaryColor: "#22c55e",
-    logo: null as string | null,
+    logo: profileData?.avatar_url || null as string | null,
     banner: null as string | null,
-    customDomain: "events.sportsevents.co",
-    emailSignature: "Best regards,\nSports Events Co. Team",
+    customDomain: "",
+    emailSignature: "",
   });
 
   // Security form state
@@ -90,34 +140,9 @@ const OrganizerSettings = () => {
 
   // Mock team members
   const teamMembers: TeamMember[] = [
-    { id: '1', name: 'John Smith', email: 'john@sportsevents.co', role: 'owner', status: 'active' },
-    { id: '2', name: 'Sarah Johnson', email: 'sarah@sportsevents.co', role: 'admin', status: 'active' },
-    { id: '3', name: 'Mike Davis', email: 'mike@sportsevents.co', role: 'editor', status: 'pending' },
+    { id: '1', name: profileData?.full_name || user?.email?.split('@')[0] || 'Current User', email: user?.email || '', role: 'owner', status: 'active' as const },
+    { id: '2', name: 'Team Member', email: 'member@example.com', role: 'admin' as const, status: 'active' as const },
   ];
-
-  const { data: profileData } = useQuery({
-    queryKey: ["organizer-profile", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user!.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const updateProfile = useMutation({
-    mutationFn: async () => {
-      toast({ title: "Profile updated successfully!" });
-    },
-    onSuccess: () => {
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ["organizer-profile"] });
-    },
-  });
 
   const updateBanking = useMutation({
     mutationFn: async () => {
@@ -131,8 +156,66 @@ const OrganizerSettings = () => {
     },
   });
 
+  // Handle profile picture upload
+  const handleProfilePictureUpload = async (file: File) => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication error",
+        description: "Please log in to upload profile picture",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Upload to storage
+      const { publicUrl, filePath } = await uploadProfilePicture(file, user.id);
+      
+      // Update profile with new avatar URL
+      const updatedProfile = await updateOrganizerProfile(user.id, {
+        avatar_url: publicUrl,
+        full_name: profile.contactName || profile.organizationName,
+      });
+      
+      // Update local state
+      setProfile(prev => ({
+        ...prev,
+        avatar_url: publicUrl
+      }));
+      
+      setBranding(prev => ({
+        ...prev,
+        logo: publicUrl
+      }));
+      
+      // Invalidate query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["organizer-profile", user?.id] });
+      
+      toast({
+        title: "Profile picture updated!",
+        description: "Your profile picture has been saved successfully."
+      });
+      
+    } catch (error: any) {
+      console.error('Error uploading profile picture:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "An error occurred while uploading your profile picture",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleLogoUpload = () => {
     fileInputRef.current?.click();
+  };
+
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleProfilePictureUpload(file);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -202,10 +285,11 @@ const OrganizerSettings = () => {
               </div>
               <Button 
                 variant={isEditing ? "default" : "outline"}
-                onClick={() => isEditing ? updateProfile.mutate() : setIsEditing(true)}
+                onClick={() => isEditing ? updateProfileMutation.mutate(profile) : setIsEditing(true)}
+                disabled={updateProfileMutation.isPending}
               >
                 {isEditing ? (
-                  <><CheckCircle className="h-4 w-4 mr-2" /> Save Changes</>
+                  <>{updateProfileMutation.isPending ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />} Save Changes</>
                 ) : (
                   <><Edit3 className="h-4 w-4 mr-2" /> Edit Profile</>
                 )}
@@ -215,32 +299,23 @@ const OrganizerSettings = () => {
               {/* Logo Upload */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={branding.logo || undefined} />
+                  <AvatarImage src={profile.avatar_url || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                    {profile.organizationName.charAt(0)}
+                    {profile.organizationName.charAt(0) || 'O'}
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={handleLogoUpload}>
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload Logo
+                      Upload Picture
                     </Button>
                     <input 
                       ref={fileInputRef}
                       type="file" 
                       accept="image/*" 
                       className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            setBranding({ ...branding, logo: e.target?.result as string });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
+                      onChange={handleFileChange}
                     />
                   </div>
                 )}
@@ -367,7 +442,7 @@ const OrganizerSettings = () => {
                         </div>
                         <div>
                           <p className="font-medium">PayPal</p>
-                          <p className="text-sm text-muted-foreground">{banking.paypalEmail}</p>
+                          <p className="text-sm text-muted-foreground">{profile.email}</p>
                         </div>
                       </div>
                       <Button variant="outline" size="sm">Connect</Button>
@@ -385,33 +460,35 @@ const OrganizerSettings = () => {
                   <div>
                     <Label>Account Holder Name</Label>
                     <Input
-                      value={banking.accountHolder}
-                      onChange={(e) => setBanking({ ...banking, accountHolder: e.target.value })}
+                      value={profile.contactName || profile.organizationName}
+                      onChange={(e) => setProfile({ ...profile, contactName: e.target.value })}
                       className="mt-1"
                     />
                   </div>
                   <div>
                     <Label>Bank Name</Label>
                     <Input
-                      value={banking.bankName}
-                      onChange={(e) => setBanking({ ...banking, bankName: e.target.value })}
+                      value={profile.organizationName}
+                      onChange={(e) => setProfile({ ...profile, organizationName: e.target.value })}
                       className="mt-1"
                     />
                   </div>
                   <div>
                     <Label>Account Number</Label>
                     <Input
-                      value={banking.accountNumber}
-                      onChange={(e) => setBanking({ ...banking, accountNumber: e.target.value })}
+                      value=""
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                       className="mt-1"
+                      placeholder="Enter account number"
                     />
                   </div>
                   <div>
                     <Label>Routing Number</Label>
                     <Input
-                      value={banking.routingNumber}
-                      onChange={(e) => setBanking({ ...banking, routingNumber: e.target.value })}
+                      value=""
+                      onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                       className="mt-1"
+                      placeholder="Enter routing number"
                     />
                   </div>
                 </div>
@@ -442,13 +519,13 @@ const OrganizerSettings = () => {
                 <div className="flex items-center gap-4 mt-1">
                   <input
                     type="color"
-                    value={branding.primaryColor}
-                    onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
+                    value="#22c55e"
+                    onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                     className="w-12 h-12 rounded cursor-pointer"
                   />
                   <Input
-                    value={branding.primaryColor}
-                    onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
+                    value="#22c55e"
+                    onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                     className="w-32"
                   />
                 </div>
@@ -458,8 +535,8 @@ const OrganizerSettings = () => {
               <div>
                 <Label>Custom Domain</Label>
                 <Input
-                  value={branding.customDomain}
-                  onChange={(e) => setBranding({ ...branding, customDomain: e.target.value })}
+                  value={profile.website}
+                  onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                   className="mt-1"
                   placeholder="events.yourdomain.com"
                 />
@@ -472,8 +549,8 @@ const OrganizerSettings = () => {
               <div>
                 <Label>Email Signature</Label>
                 <Textarea
-                  value={branding.emailSignature}
-                  onChange={(e) => setBranding({ ...branding, emailSignature: e.target.value })}
+                  value={profile.bio}
+                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                   className="mt-1 min-h-[100px]"
                 />
               </div>
@@ -509,8 +586,8 @@ const OrganizerSettings = () => {
                   </div>
                 </div>
                 <Switch
-                  checked={security.twoFactorEnabled}
-                  onCheckedChange={(checked) => setSecurity({ ...security, twoFactorEnabled: checked })}
+                  checked={false}
+                  onCheckedChange={() => {}}
                 />
               </div>
 
@@ -525,8 +602,8 @@ const OrganizerSettings = () => {
                   </div>
                 </div>
                 <Switch
-                  checked={security.loginNotifications}
-                  onCheckedChange={(checked) => setSecurity({ ...security, loginNotifications: checked })}
+                  checked={true}
+                  onCheckedChange={() => {}}
                 />
               </div>
 
@@ -541,8 +618,8 @@ const OrganizerSettings = () => {
                   </div>
                 </div>
                 <Switch
-                  checked={security.apiAccess}
-                  onCheckedChange={(checked) => setSecurity({ ...security, apiAccess: checked })}
+                  checked={false}
+                  onCheckedChange={() => {}}
                 />
               </div>
             </CardContent>

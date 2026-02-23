@@ -67,8 +67,7 @@ const AthleteEvents = () => {
         .insert({ 
           event_id: eventId, 
           athlete_id: user!.id,
-          status: 'registered',
-          payment_status: 'pending'
+          status: 'pending'
         });
       if (error) throw error;
     },
@@ -77,7 +76,14 @@ const AthleteEvents = () => {
       queryClient.invalidateQueries({ queryKey: ["athlete-registrations"] });
       toast({ title: "Registered successfully!" });
     },
-    onError: () => toast({ title: "Registration failed", variant: "destructive" }),
+    onError: (error) => {
+      console.error('Registration error:', error);
+      toast({ 
+        title: "Registration failed", 
+        description: error.message || "Unable to register for the event. Please try again.",
+        variant: "destructive" 
+      });
+    },
   });
 
   const unregisterMutation = useMutation({
@@ -94,7 +100,14 @@ const AthleteEvents = () => {
       queryClient.invalidateQueries({ queryKey: ["athlete-registrations"] });
       toast({ title: "Registration cancelled" });
     },
-    onError: () => toast({ title: "Failed to cancel", variant: "destructive" }),
+    onError: (error) => {
+      console.error('Unregistration error:', error);
+      toast({ 
+        title: "Failed to cancel registration", 
+        description: error.message || "Unable to cancel registration. Please try again.",
+        variant: "destructive" 
+      });
+    },
   });
 
   // Get unique sports and locations for filters
@@ -145,6 +158,24 @@ const AthleteEvents = () => {
 
   const isRegistered = (eventId: string) => 
     myRegistrations?.some((reg: any) => reg.event_id === eventId);
+
+  // Helper function to determine the actual status of an event based on dates
+  const getActualEventStatus = (event: any) => {
+    const now = new Date();
+    const startDate = new Date(event.start_date);
+    const endDate = event.end_date ? new Date(event.end_date) : null;
+    
+    if (startDate <= now && (!endDate || endDate > now)) {
+      return 'ongoing';
+    } else if (startDate > now) {
+      return 'upcoming';
+    } else {
+      return 'completed';
+    }
+  };
+
+  // Filter for real-time ongoing events
+  const ongoingEvents = events?.filter(event => getActualEventStatus(event) === 'ongoing') ?? [];
 
   const EventDetailDialog = ({ event, children }: { event: any; children: React.ReactNode }) => (
     <Dialog>
@@ -274,10 +305,100 @@ const AthleteEvents = () => {
       </div>
 
       <Tabs defaultValue="browse" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="live">Live Events</TabsTrigger>
           <TabsTrigger value="browse">Browse Events</TabsTrigger>
           <TabsTrigger value="my-registrations">My Registrations</TabsTrigger>
         </TabsList>
+
+        {/* Live Events Tab */}
+        <TabsContent value="live" className="space-y-6">
+          {/* Live Events Grid */}
+          {ongoingEvents.length === 0 ? (
+            <Card className="glass">
+              <CardContent className="p-12 text-center">
+                <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground">No live events happening right now. Check back soon!</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ongoingEvents.map((event) => (
+                <Card key={event.id} className="glass border-primary/50 ring-1 ring-primary/20">
+                  {event.banner_image_url && (
+                    <div className="relative pt-[56.25%]"> {/* 16:9 aspect ratio */}
+                      <img 
+                        src={event.banner_image_url} 
+                        alt={`${event.title} banner`} 
+                        className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
+                      />
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-t from-black/70 to-transparent rounded-t-lg opacity-60" />
+                    </div>
+                  )}
+                  <CardHeader className={`pb-3 ${event.banner_image_url ? 'pt-16' : 'pt-3'}`}>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-base">{event.title}</CardTitle>
+                      <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">LIVE NOW</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {event.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                    )}
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Started: {format(new Date(event.start_date), "MMM d, yyyy · h:mm a")}
+                      </div>
+                      {event.location && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {event.location}
+                        </div>
+                      )}
+                      {event.max_participants && (
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5" />
+                          {event.max_participants} max participants
+                        </div>
+                      )}
+                    </div>
+                    {event.registration_fee && Number(event.registration_fee) > 0 && (
+                      <p className="text-sm font-medium text-primary">${event.registration_fee}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <EventDetailDialog event={event}>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          Details <ChevronRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      </EventDetailDialog>
+                      {isRegistered(event.id) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => unregisterMutation.mutate(event.id)}
+                          disabled={unregisterMutation.isPending}
+                        >
+                          Cancel
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => registerMutation.mutate(event.id)}
+                          disabled={registerMutation.isPending}
+                        >
+                          Join Now
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         {/* Browse Events Tab */}
         <TabsContent value="browse" className="space-y-6">
@@ -340,7 +461,17 @@ const AthleteEvents = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredEvents.map((event) => (
                 <Card key={event.id} className="glass hover:border-primary/30 transition-colors">
-                  <CardHeader className="pb-3">
+                  {event.banner_image_url && (
+                    <div className="relative pt-[56.25%]"> {/* 16:9 aspect ratio */}
+                      <img 
+                        src={event.banner_image_url} 
+                        alt={`${event.title} banner`} 
+                        className="absolute inset-0 w-full h-full object-cover rounded-t-lg"
+                      />
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-t from-black/70 to-transparent rounded-t-lg opacity-60" />
+                    </div>
+                  )}
+                  <CardHeader className={`pb-3 ${event.banner_image_url ? 'pt-16' : 'pt-3'}`}>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-base">{event.title}</CardTitle>
                       <Badge variant="secondary" className="text-xs">{event.sport}</Badge>

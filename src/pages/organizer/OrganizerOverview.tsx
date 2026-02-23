@@ -203,7 +203,7 @@ const OrganizerOverview = () => {
               <div className="space-y-4">
                 {upcomingMatches.map((event) => {
                   const registrationRate = getRegistrationRate(event.id, event.max_participants);
-                  const participantCount = registrationsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
+                  const participantCount = participantsData?.filter((r: any) => r.event_id === event.id).length ?? 0;
                   
                   return (
                     <div key={event.id} className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors">

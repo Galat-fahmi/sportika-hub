@@ -31,12 +31,11 @@ import {
   Trophy,
   ChevronRight,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Wifi
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { getOrganizerParticipants, updateParticipantStatus, checkInParticipant as apiCheckInParticipant } from "@/lib/organizer-api";
-import { getEventParticipants, updateParticipantInfo } from "@/lib/organizer-participant-api";
 
 const OrganizerParticipants = () => {
   const { user } = useAuth();
@@ -49,8 +48,45 @@ const OrganizerParticipants = () => {
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [qrInput, setQrInput] = useState("");
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
 
-  const { data: events } = useQuery({
+  // Real-time subscription for event registrations
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('organizer-registrations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_registrations'
+        },
+        (payload) => {
+          console.log('Real-time registration update:', payload);
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
+          
+          // Show toast for new registrations
+          if (payload.eventType === 'INSERT') {
+            toast({ 
+              title: "New Registration!", 
+              description: "A new participant has registered for your event."
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        setIsRealTimeConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
+  const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["organizer-events", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,41 +98,94 @@ const OrganizerParticipants = () => {
       return data;
     },
     enabled: !!user,
+    refetchInterval: 30000, // Refetch every 30 seconds as fallback
+    staleTime: 10000,
   });
 
-  const { data: registrations, isLoading } = useQuery({
+  const { data: registrations, isLoading: registrationsLoading, refetch: refetchRegistrations } = useQuery({
     queryKey: ["organizer-registrations", user?.id, selectedEvent],
     queryFn: async () => {
-      if (!events || events.length === 0) return [];
-      const eventIds = selectedEvent === "all" ? events.map((e) => e.id) : [selectedEvent];
-      const { data, error } = await supabase
+      // First, get the events owned by this organizer
+      const { data: organizerEvents, error: eventsError } = await supabase
+        .from("events")
+        .select("id")
+        .eq("organizer_id", user!.id);
+      
+      if (eventsError) {
+        console.error('Error fetching organizer events:', eventsError);
+        throw eventsError;
+      }
+      
+      if (!organizerEvents || organizerEvents.length === 0) {
+        // If no events, return empty array
+        return [];
+      }
+      
+      // Get event IDs
+      const eventIds = organizerEvents.map(e => e.id);
+      
+      // Now fetch registrations for these events
+      let queryBuilder = supabase
         .from("event_registrations")
-        .select("*, events(title, sport, start_date), profiles:athlete_id(full_name, email)")
+        .select("*, events:event_id(title, sport, start_date), profiles:athlete_id(full_name, email)")
         .in("event_id", eventIds)
         .order("registered_at", { ascending: false });
+      
+      // Apply additional filter if specific event is selected
+      if (selectedEvent !== "all") {
+        queryBuilder = queryBuilder.eq("event_id", selectedEvent);
+      }
+      
+      const { data, error } = await queryBuilder;
       if (error) throw error;
       return data;
     },
-    enabled: !!events,
+    enabled: !!user,
+    refetchInterval: 15000, // Refetch every 15 seconds for real-time feel
+    staleTime: 5000,
   });
 
   const approveRegistration = useMutation({
     mutationFn: async (registrationId: string) => {
-      await updateParticipantInfo(registrationId, { status: 'confirmed' });
+      const { error } = await supabase
+        .from('event_registrations')
+        .update({ status: 'approved' })
+        .eq('id', registrationId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
       toast({ title: "Registration approved" });
     },
+    onError: (error: any) => {
+      console.error('Error approving registration:', error);
+      toast({ 
+        title: "Failed to approve registration", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    },
   });
 
   const rejectRegistration = useMutation({
     mutationFn: async (registrationId: string) => {
-      await updateParticipantInfo(registrationId, { status: 'rejected' });
+      const { error } = await supabase
+        .from('event_registrations')
+        .update({ status: 'rejected' })
+        .eq('id', registrationId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
       toast({ title: "Registration rejected" });
+    },
+    onError: (error: any) => {
+      console.error('Error rejecting registration:', error);
+      toast({ 
+        title: "Failed to reject registration", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -162,7 +251,7 @@ const OrganizerParticipants = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'registered':
+      case 'approved':
         return <Badge className="bg-green-500/20 text-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>;
       case 'pending':
         return <Badge className="bg-yellow-500/20 text-yellow-600"><Clock className="h-3 w-3 mr-1" /> Pending</Badge>;
@@ -188,13 +277,13 @@ const OrganizerParticipants = () => {
 
   const stats = {
     total: filteredRegistrations.length,
-    approved: filteredRegistrations.filter((r: any) => r.status === 'confirmed' || r.status === 'registered').length,
+    approved: filteredRegistrations.filter((r: any) => r.status === 'approved').length,
     pending: filteredRegistrations.filter((r: any) => r.status === 'pending').length,
     paid: filteredRegistrations.filter((r: any) => r.payment_status === 'paid').length,
     checkedIn: filteredRegistrations.filter((r: any) => r.checked_in).length,
   };
 
-  if (isLoading) return <p className="text-muted-foreground">Loading participants...</p>;
+  if (eventsLoading || registrationsLoading) return <p className="text-muted-foreground">Loading participants...</p>;
 
   const refreshParticipants = async () => {
     await queryClient.invalidateQueries({ queryKey: ["organizer-registrations"] });
@@ -206,8 +295,16 @@ const OrganizerParticipants = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Participant Management</h1>
-          <p className="text-muted-foreground mt-1">Manage registrations, approvals, and check-ins.</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-display font-bold text-foreground">Participant Management</h1>
+            {isRealTimeConnected && (
+              <Badge className="bg-green-500/20 text-green-600 gap-1">
+                <Wifi className="h-3 w-3" />
+                Live
+              </Badge>
+            )}
+          </div>
+          <p className="text-muted-foreground mt-1">Manage registrations, approvals, and check-ins. {isRealTimeConnected ? 'Data updates automatically.' : ''}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={refreshParticipants} className="gap-2">
@@ -386,7 +483,7 @@ const OrganizerParticipants = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="registered">Approved</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
@@ -491,7 +588,7 @@ const OrganizerParticipants = () => {
                               </Button>
                             </>
                           )}
-                          {!reg.checked_in && reg.status === 'registered' && (
+                          {!reg.checked_in && reg.status === 'approved' && (
                             <Button 
                               size="sm" 
                               variant="outline"

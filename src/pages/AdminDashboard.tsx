@@ -1,14 +1,34 @@
+import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import AdminOverview from "@/pages/admin/AdminOverview";
-import AdminUsers from "@/pages/admin/AdminUsers";
-import AdminEvents from "@/pages/admin/AdminEvents";
-import AdminRoles from "@/pages/admin/AdminRoles";
-import AdminAnalytics from "@/pages/admin/AdminAnalytics";
-import AdminMonitoring from "@/pages/admin/AdminMonitoring";
-import AdminFinance from "@/pages/admin/AdminFinance";
-import AdminSettings from "@/pages/admin/AdminSettings";
 import { LayoutDashboard, Users, Calendar, Shield, BarChart3, Activity, DollarSign, Settings } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load all sub-pages for code splitting
+const AdminOverview = lazy(() => import("@/pages/admin/AdminOverview"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminEvents = lazy(() => import("@/pages/admin/AdminEvents"));
+const AdminRoles = lazy(() => import("@/pages/admin/AdminRoles"));
+const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
+const AdminMonitoring = lazy(() => import("@/pages/admin/AdminMonitoring"));
+const AdminFinance = lazy(() => import("@/pages/admin/AdminFinance"));
+const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
+
+// Dashboard loading skeleton
+const DashboardSkeleton = () => (
+  <div className="space-y-6 p-1">
+    <div className="space-y-2">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-4 w-64" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-32 rounded-xl" />
+      ))}
+    </div>
+    <Skeleton className="h-64 rounded-xl" />
+  </div>
+);
 
 const navItems = [
   { label: "Overview", path: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -23,17 +43,19 @@ const navItems = [
 
 const AdminDashboard = () => (
   <DashboardLayout navItems={navItems} title="Admin">
-    <Routes>
-      <Route index element={<AdminOverview />} />
-      <Route path="users" element={<AdminUsers />} />
-      <Route path="events" element={<AdminEvents />} />
-      <Route path="roles" element={<AdminRoles />} />
-      <Route path="analytics" element={<AdminAnalytics />} />
-      <Route path="monitoring" element={<AdminMonitoring />} />
-      <Route path="finance" element={<AdminFinance />} />
-      <Route path="settings" element={<AdminSettings />} />
-      <Route path="*" element={<Navigate to="/admin" replace />} />
-    </Routes>
+    <Suspense fallback={<DashboardSkeleton />}>
+      <Routes>
+        <Route index element={<AdminOverview />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="events" element={<AdminEvents />} />
+        <Route path="roles" element={<AdminRoles />} />
+        <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="monitoring" element={<AdminMonitoring />} />
+        <Route path="finance" element={<AdminFinance />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    </Suspense>
   </DashboardLayout>
 );
 

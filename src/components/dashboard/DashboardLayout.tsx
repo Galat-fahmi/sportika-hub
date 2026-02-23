@@ -1,10 +1,11 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, memo, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import BillboardBanner from "./BillboardBanner";
+import { usePrefetch, prefetchRoutes } from "@/hooks/use-prefetch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import {
   X,
   ChevronDown
 } from "lucide-react";
+import { AvatarImage } from "@/components/ui/avatar";
 
 interface NavItem {
   label: string;
@@ -39,15 +41,31 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = ({ children, navItems, title }: DashboardLayoutProps) => {
-  const { signOut, user } = useAuth();
+  const { signOut, user, profileAvatarUrl } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { prefetch } = usePrefetch();
+
+  // Prefetch adjacent routes on mount for faster navigation
+  useEffect(() => {
+    const paths = navItems.map(item => item.path);
+    // Prefetch all nav routes after a short delay
+    const timer = setTimeout(() => {
+      prefetchRoutes(paths);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [navItems]);
+
+  // Memoized prefetch handler
+  const handlePrefetch = useCallback((path: string) => {
+    prefetch(path);
+  }, [prefetch]);
 
   // Show billboard banner only on the main dashboard homepage (/athlete)
   const showBillboard = location.pathname === "/athlete";
 
-  // Get user's initials for avatar
+  // Get user's initials for avatar fallback
   const getInitials = () => {
     if (!user?.email) return "U";
     return user.email.split("@")[0].slice(0, 2).toUpperCase();
@@ -90,6 +108,8 @@ const DashboardLayout = ({ children, navItems, title }: DashboardLayoutProps) =>
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileMenuOpen(false)}
+                onMouseEnter={() => handlePrefetch(item.path)}
+                onFocus={() => handlePrefetch(item.path)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
@@ -119,8 +139,16 @@ const DashboardLayout = ({ children, navItems, title }: DashboardLayoutProps) =>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={`flex items-center gap-3 w-full p-2 rounded-lg hover:bg-secondary transition-colors ${sidebarOpen ? "" : "lg:justify-center"}`}>
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-primary">{getInitials()}</span>
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
+                  {profileAvatarUrl ? (
+                    <img 
+                      src={profileAvatarUrl} 
+                      alt={user?.email || 'User avatar'} 
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-primary">{getInitials()}</span>
+                  )}
                 </div>
                 <div className={`flex-1 text-left min-w-0 transition-opacity duration-200 ${sidebarOpen ? "opacity-100" : "lg:opacity-0 lg:w-0 lg:overflow-hidden"}`}>
                   <p className="text-sm font-medium truncate">{user?.email?.split("@")[0]}</p>
@@ -241,8 +269,16 @@ const DashboardLayout = ({ children, navItems, title }: DashboardLayoutProps) =>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2 hidden sm:flex">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">{getInitials()}</span>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center relative">
+                      {profileAvatarUrl ? (
+                        <img 
+                          src={profileAvatarUrl} 
+                          alt={user?.email || 'User avatar'} 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium text-primary">{getInitials()}</span>
+                      )}
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
@@ -282,4 +318,4 @@ const DashboardLayout = ({ children, navItems, title }: DashboardLayoutProps) =>
   );
 };
 
-export default DashboardLayout;
+export default memo(DashboardLayout);
