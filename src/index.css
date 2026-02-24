@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -68,57 +68,102 @@
     --fresh-sky-800: 197 100% 84%;
     --fresh-sky-900: 197 100% 95%;
     
-    /* Component Colors using brand palette */
-    --background: 210 100% 5%;  /* ink_black-500 */
-    --foreground: 0 0% 100%;    /* white-500 */
+    /* Enhanced Sportika Color Palette - Improved Contrast */
     
-    --card: 204 100% 10%;       /* deep_space_blue-200 */
-    --card-foreground: 0 0% 100%;
+    /* Background Scale - Lighter for better contrast */
+    --background: 220 25% 8%;           /* Deep navy black - easier on eyes */
+    --background-secondary: 220 20% 12%; /* Slightly lighter for cards */
+    --background-tertiary: 220 18% 16%; /* For elevated surfaces */
     
-    --popover: 204 100% 10%;    /* deep_space_blue-200 */
-    --popover-foreground: 0 0% 100%;
+    /* Foreground Scale - Ensuring WCAG AA compliance */
+    --foreground: 0 0% 98%;             /* Near white for primary text */
+    --foreground-secondary: 0 0% 85%;   /* Light gray for secondary text */
+    --foreground-muted: 0 0% 65%;       /* Muted text - still readable */
+    --foreground-subtle: 0 0% 50%;      /* Subtle text elements */
     
-    --primary: 196 100% 45%;    /* fresh_sky-500 */
-    --primary-foreground: 0 0% 100%;
+    /* Primary Brand Colors - Vibrant cyan/blue */
+    --primary: 190 95% 50%;             /* Bright cyan - high visibility */
+    --primary-hover: 190 95% 60%;       /* Lighter on hover */
+    --primary-foreground: 220 25% 8%;   /* Dark text on primary */
+    --primary-subtle: 190 95% 50% / 0.15; /* Subtle primary background */
     
-    --secondary: 204 100% 17%;  /* deep_space_blue-500 */
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary Colors */
+    --secondary: 220 20% 18%;           /* Elevated surface color */
+    --secondary-hover: 220 20% 24%;     /* Hover state */
+    --secondary-foreground: 0 0% 98%;   /* Text on secondary */
     
-    --muted: 210 100% 3%;       /* ink_black-300 */
-    --muted-foreground: 0 0% 60%; /* white-400 */
+    /* Accent Colors - Electric blue */
+    --accent: 210 100% 55%;             /* Electric blue accent */
+    --accent-hover: 210 100% 65%;       /* Lighter accent */
+    --accent-foreground: 220 25% 8%;    /* Dark text on accent */
+    --accent-subtle: 210 100% 55% / 0.15;
     
-    --accent: 195 100% 32%;     /* cerulean-500 */
-    --accent-foreground: 0 0% 100%;
-    
-    --destructive: 0 84% 60%;   /* red tone */
+    /* Success, Warning, Error */
+    --success: 145 70% 50%;
+    --success-foreground: 220 25% 8%;
+    --warning: 38 95% 55%;
+    --warning-foreground: 220 25% 8%;
+    --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 210 100% 3%;      /* ink_black-300 */
-    --input: 210 100% 3%;       /* ink_black-300 */
-    --ring: 196 100% 45%;       /* fresh_sky-500 */
+    /* Surface Colors */
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 98%;
+    --card-hover: 220 20% 16%;
     
-    --radius: 0.5rem;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 98%;
     
-    --sidebar-background: 204 100% 7%;  /* deep_space_blue-100 */
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 196 100% 45%;     /* fresh_sky-500 */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 204 100% 17%;     /* deep_space_blue-500 */
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 100% 3%;      /* ink_black-300 */
-    --sidebar-ring: 196 100% 45%;       /* fresh_sky-500 */
+    /* Interactive Elements */
+    --muted: 220 15% 20%;
+    --muted-foreground: 0 0% 70%;
+    --muted-hover: 220 15% 26%;
     
-    /* Custom tokens */
-    --glow-primary: 196 100% 45%;       /* fresh_sky-500 */
-    --glow-accent: 195 100% 32%;        /* cerulean-500 */
-    --surface-elevated: 204 100% 14%;   /* deep_space_blue-400 */
-    --gradient-start: 196 100% 45%;     /* fresh_sky-500 */
-    --gradient-end: 195 100% 32%;       /* cerulean-500 */
+    /* Borders and Dividers */
+    --border: 220 15% 22%;
+    --border-hover: 220 15% 30%;
+    --border-subtle: 220 15% 18%;
     
-    /* Additional Brand Tokens */
-    --energy: 196 100% 59%;     /* fresh_sky-600 */
-    --dark-power: 210 100% 1%;  /* ink_black-100 */
-    --shine: 197 100% 72%;      /* fresh_sky-700 */
+    --input: 220 15% 18%;
+    --input-focus: 190 95% 50%;
+    
+    --ring: 190 95% 50%;
+    --ring-offset: 220 25% 8%;
+    
+    --radius: 0.75rem;
+    
+    /* Sidebar */
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 190 95% 50%;
+    --sidebar-primary-foreground: 220 25% 8%;
+    --sidebar-accent: 220 20% 16%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 190 95% 50%;
+    
+    /* Enhanced Brand Tokens */
+    --glow-primary: 190 95% 50%;
+    --glow-accent: 210 100% 55%;
+    --surface-elevated: 220 20% 14%;
+    --surface-floating: 220 18% 20%;
+    
+    /* Gradient Colors */
+    --gradient-start: 190 95% 50%;
+    --gradient-mid: 200 100% 55%;
+    --gradient-end: 210 100% 55%;
+    
+    /* Energy & Highlights */
+    --energy: 190 95% 55%;
+    --energy-bright: 190 95% 65%;
+    --shine: 200 100% 70%;
+    
+    /* Legacy compatibility */
+    --white: 0 0% 100%;
+    --ink-black: 220 25% 8%;
+    --deep-space-blue: 220 20% 12%;
+    --cerulean: 210 100% 55%;
+    --fresh-sky: 190 95% 50%;
   }
 }
 
@@ -129,64 +174,169 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    font-feature-settings: "liga" 1, "calt" 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: "Anton", Impact, "Arial Black", sans-serif;
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+    font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
   }
 
   h1 {
-    @apply text-5xl md:text-6xl lg:text-7xl;
+    @apply text-4xl md:text-5xl lg:text-6xl xl:text-7xl;
+    font-weight: 700;
+    letter-spacing: -0.04em;
   }
 
   h2 {
-    @apply text-4xl md:text-5xl;
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
 
   h3 {
-    @apply text-3xl md:text-4xl;
+    @apply text-2xl md:text-3xl lg:text-4xl;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 
   h4 {
-    @apply text-2xl md:text-3xl;
+    @apply text-xl md:text-2xl lg:text-3xl;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 
   h5 {
-    @apply text-xl md:text-2xl;
+    @apply text-lg md:text-xl lg:text-2xl;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   h6 {
-    @apply text-lg md:text-xl;
+    @apply text-base md:text-lg lg:text-xl;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
   }
 
   p {
-    @apply leading-relaxed;
+    @apply text-base;
+    line-height: 1.75;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.25rem;
+    color: hsl(var(--foreground-secondary));
   }
 
-  strong {
-    @apply font-bold;
+  strong, b {
+    @apply font-semibold;
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  small {
+    @apply text-sm;
+    font-weight: 400;
+    line-height: 1.6;
+    color: hsl(var(--foreground-muted));
+  }
+
+  blockquote {
+    @apply text-lg italic pl-6 border-l-4;
+    border-color: hsl(var(--primary));
+    line-height: 1.8;
+    margin: 2rem 0;
+    color: hsl(var(--foreground-secondary));
+    background: hsl(var(--primary-subtle));
+    padding: 1.5rem 1.5rem 1.5rem 2rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+
+  ul, ol {
+    @apply pl-6 my-4 space-y-3;
+    line-height: 1.7;
+  }
+
+  li {
+    @apply text-base;
+    line-height: 1.75;
+    color: hsl(var(--foreground-secondary));
+  }
+
+  a {
+    @apply transition-colors duration-200;
+    color: hsl(var(--primary));
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: hsl(var(--primary-hover));
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  code {
+    @apply px-1.5 py-0.5 rounded text-sm;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    background: hsl(var(--muted));
+    color: hsl(var(--primary));
+  }
+
+  pre {
+    @apply p-4 rounded-lg overflow-x-auto;
+    background: hsl(var(--background-secondary));
+    border: 1px solid hsl(var(--border));
   }
 }
 
 @layer utilities {
-  /* Premium Text Effects */
+  /* Premium Text Effects - Enhanced */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--energy)));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-subtle {
     @apply bg-clip-text text-transparent;
-    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--energy)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .text-gradient-reverse {
     @apply bg-clip-text text-transparent;
     background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--primary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-animated {
+    @apply bg-clip-text text-transparent;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--energy)), hsl(var(--primary)));
+    background-size: 300% 100%;
+    animation: gradient-shift 4s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 40px hsl(var(--primary) / 0.3);
+  }
+
+  .text-glow-subtle {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.3);
   }
 
   /* Premium Glow Effects */
@@ -212,28 +362,45 @@
       0 0 100px hsl(var(--energy) / 0.1);
   }
 
-  /* Premium Glass Effects */
+  /* Premium Glass Effects - Enhanced Contrast */
   .glass {
-    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+    @apply backdrop-blur-2xl border rounded-xl;
+    background: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--border));
     box-shadow: 
-      0 8px 32px -4px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  .glass-card {
-    @apply bg-card/90 backdrop-blur-3xl border border-border/70 rounded-2xl;
-    box-shadow: 
-      0 12px 40px -8px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 8px 32px -4px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
-  .glass-navbar {
-    @apply bg-background/95 backdrop-blur-3xl border-b border-border/50;
+  .glass-card {
+    @apply backdrop-blur-3xl border rounded-2xl;
+    background: hsl(var(--card) / 0.95);
+    border-color: hsl(var(--border));
     box-shadow: 
-      0 2px 20px -2px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 12px 40px -8px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-navbar {
+    @apply backdrop-blur-3xl border-b;
+    background: hsl(var(--background) / 0.98);
+    border-color: hsl(var(--border));
+    box-shadow: 
+      0 2px 20px -2px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* Enhanced Surface Styles */
+  .surface-elevated {
+    background: hsl(var(--surface-elevated));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  .surface-floating {
+    background: hsl(var(--surface-floating));
+    border: 1px solid hsl(var(--border-hover));
+    box-shadow: 0 8px 30px -6px rgba(0, 0, 0, 0.4);
   }
 
   /* Premium Grid Patterns */
@@ -251,14 +418,14 @@
     background-size: 40px 40px;
   }
 
-  /* Premium Card Styles */
+  /* Premium Card Styles - Enhanced Contrast */
   .card-premium {
-    @apply relative overflow-hidden rounded-3xl border border-border/60;
-    background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--card) / 0.8));
+    @apply relative overflow-hidden rounded-3xl border;
+    background: linear-gradient(145deg, hsl(var(--card)), hsl(var(--background-secondary)));
+    border-color: hsl(var(--border));
     box-shadow: 
-      0 20px 50px -12px rgba(0, 0, 0, 0.25),
-      0 0 0 1px rgba(255, 255, 255, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 20px 50px -12px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
   .card-premium::before {
@@ -268,7 +435,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent);
+    background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
   }
 
   .card-hover {
@@ -277,27 +444,44 @@
 
   .card-hover:hover {
     transform: translateY(-8px) scale(1.02);
+    background: linear-gradient(145deg, hsl(var(--card-hover)), hsl(var(--card)));
+    border-color: hsl(var(--primary) / 0.5);
     box-shadow: 
-      0 30px 70px -15px rgba(0, 0, 0, 0.35),
+      0 30px 70px -15px rgba(0, 0, 0, 0.4),
       0 0 0 1px hsl(var(--primary) / 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
 
-  /* Premium Button Styles */
+  .card-interactive {
+    @apply relative overflow-hidden rounded-2xl border transition-all duration-300;
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+
+  .card-interactive:hover {
+    background: hsl(var(--card-hover));
+    border-color: hsl(var(--border-hover));
+    box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Premium Button Styles - Enhanced Contrast */
   .btn-premium {
-    @apply relative overflow-hidden font-bold tracking-wide transition-all duration-300;
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+    @apply relative overflow-hidden font-semibold tracking-wide transition-all duration-300;
+    font-family: "Space Grotesk", sans-serif;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
+    color: hsl(var(--primary-foreground));
     border: 2px solid transparent;
     box-shadow: 
       0 8px 25px -4px hsl(var(--primary) / 0.5),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .btn-premium:hover {
     transform: translateY(-3px);
+    background: linear-gradient(135deg, hsl(var(--primary-hover)), hsl(var(--energy)));
     box-shadow: 
       0 12px 35px -6px hsl(var(--primary) / 0.6),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 
   .btn-premium:active {
@@ -305,8 +489,10 @@
   }
 
   .btn-energy {
-    @apply relative font-bold tracking-wide transition-all duration-300;
+    @apply relative font-semibold tracking-wide transition-all duration-300;
+    font-family: "Space Grotesk", sans-serif;
     background: linear-gradient(135deg, hsl(var(--energy)), hsl(var(--accent)));
+    color: hsl(var(--accent-foreground));
     border: 2px solid hsl(var(--energy) / 0.8);
     box-shadow: 
       0 8px 25px -4px hsl(var(--energy) / 0.6),
@@ -315,6 +501,7 @@
 
   .btn-energy:hover {
     transform: translateY(-3px) scale(1.02);
+    background: linear-gradient(135deg, hsl(var(--energy-bright)), hsl(var(--accent-hover)));
     box-shadow: 
       0 12px 35px -6px hsl(var(--energy) / 0.7),
       inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -322,19 +509,36 @@
   }
 
   .btn-outline-premium {
-    @apply border-2 font-bold tracking-wide transition-all duration-300;
+    @apply border-2 font-semibold tracking-wide transition-all duration-300;
+    font-family: "Space Grotesk", sans-serif;
     background: transparent;
-    border-color: hsl(var(--border) / 0.8);
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border-hover));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   .btn-outline-premium:hover {
-    background: hsl(var(--primary) / 0.1);
-    border-color: hsl(var(--primary) / 0.8);
+    background: hsl(var(--primary-subtle));
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary));
     transform: translateY(-2px);
     box-shadow: 
       0 8px 25px -4px hsl(var(--primary) / 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-secondary {
+    @apply relative font-semibold tracking-wide transition-all duration-300;
+    font-family: "Space Grotesk", sans-serif;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+    border: 2px solid hsl(var(--border));
+  }
+
+  .btn-secondary:hover {
+    background: hsl(var(--secondary-hover));
+    border-color: hsl(var(--border-hover));
+    transform: translateY(-2px);
   }
 
   /* Premium Typography */
@@ -343,42 +547,83 @@
   }
 
   .heading-xl {
-    @apply text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight;
-    font-family: "Anton", Impact, "Arial Black", sans-serif;
-    letter-spacing: -0.03em;
+    @apply text-4xl md:text-5xl lg:text-6xl xl:text-7xl;
+    font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: hsl(var(--foreground));
   }
 
   .heading-lg {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
-    font-family: "Anton", Impact, "Arial Black", sans-serif;
-    letter-spacing: -0.02em;
+    @apply text-3xl md:text-4xl lg:text-5xl;
+    font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
   }
 
   .heading-md {
-    @apply text-3xl md:text-4xl font-bold tracking-tight;
-    font-family: "Anton", Impact, "Arial Black", sans-serif;
-    letter-spacing: -0.015em;
+    @apply text-2xl md:text-3xl lg:text-4xl;
+    font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
   }
 
   .heading-sm {
-    @apply text-2xl md:text-3xl font-bold tracking-tight;
-    font-family: "Anton", Impact, "Arial Black", sans-serif;
-    letter-spacing: -0.01em;
+    @apply text-xl md:text-2xl lg:text-3xl;
+    font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: hsl(var(--foreground));
   }
 
   .body-lg {
-    @apply text-lg md:text-xl text-muted-foreground leading-relaxed;
-    font-weight: 500;
+    @apply text-lg md:text-xl;
+    font-weight: 400;
+    line-height: 1.75;
+    letter-spacing: -0.01em;
+    color: hsl(var(--foreground-secondary));
   }
 
   .body-md {
-    @apply text-base md:text-lg text-muted-foreground leading-relaxed;
+    @apply text-base md:text-lg;
     font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    color: hsl(var(--foreground-secondary));
   }
 
   .body-sm {
-    @apply text-sm text-muted-foreground leading-relaxed;
+    @apply text-sm;
     font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: 0;
+    color: hsl(var(--foreground-muted));
+  }
+
+  .text-primary-brand {
+    color: hsl(var(--primary));
+  }
+
+  .text-accent-brand {
+    color: hsl(var(--accent));
+  }
+
+  .text-high-contrast {
+    color: hsl(var(--foreground));
+  }
+
+  .text-medium-contrast {
+    color: hsl(var(--foreground-secondary));
+  }
+
+  .text-low-contrast {
+    color: hsl(var(--foreground-muted));
   }
 
   /* Premium Animations */

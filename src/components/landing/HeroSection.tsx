@@ -38,16 +38,16 @@ const HeroSection = () => {
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black leading-[0.9] tracking-tighter mb-8">
-            <span className="text-foreground">ELEVATE</span>
+            <span className="text-foreground">PAKISTAN'S #1</span>
             <br />
-            <span className="text-gradient">YOUR GAME</span>
+            <span className="text-gradient">SPORTS PLATFORM</span>
             <br />
-            <span className="text-foreground">TO THE NEXT LEVEL</span>
+            <span className="text-foreground">FOR ATHLETES</span>
           </h1>
 
           <p className="max-w-2xl mx-auto text-xl text-muted-foreground mb-12 leading-relaxed font-medium">
-            The ultimate sports technology platform connecting athletes, organizers, and brands. 
-            Engineered for peak performance and built for champions.
+            Connect with university sports competitions, cricket & football tournaments, 
+            athlete sponsorship opportunities, and corporate sports events across Karachi, Lahore, Islamabad & Pakistan.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16">

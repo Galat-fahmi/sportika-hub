@@ -27,8 +27,16 @@ import {
   Target,
   ChevronRight,
   BookOpen,
-  Star
+  Star,
+  Sparkles,
+  FileText,
+  Activity,
+  ArrowUpRight,
+  Heart,
+  Share2,
+  Bookmark
 } from "lucide-react";
+import { BlogSEO } from "@/components/SEO";
 
 interface BlogPost {
   id: string;
@@ -51,121 +59,133 @@ interface BlogPost {
 const blogPosts: BlogPost[] = [
   {
     id: "1",
-    title: "The Science of Peak Performance: Training Like Elite Athletes",
-    excerpt: "Discover the cutting-edge training methodologies used by world-class athletes to achieve peak performance consistently.",
+    title: "Cricket Training Secrets: Learning from Pakistan's Best",
+    excerpt: "Discover the training methodologies used by Pakistan's cricket stars like Babar Azam and Shaheen Afridi to achieve excellence.",
     content: "",
     category: "Training Tips",
     author: {
-      name: "Dr. Sarah Mitchell",
+      name: "Dr. Ayesha Rahman",
       avatar: athlete1,
-      role: "Sports Scientist"
+      role: "Cricket Coach & Sports Scientist"
     },
     publishedAt: "2024-02-15",
     readTime: "8 min read",
     featured: true,
     image: blog1,
-    tags: ["Training", "Performance", "Science"]
+    tags: ["Cricket", "Training", "Pakistan Sports"]
   },
   {
     id: "2",
-    title: "From Local Courts to Global Stages: Ahmed Khan's Journey",
-    excerpt: "An inspiring story of determination and passion as Ahmed Khan rises from local cricket matches to international championships.",
+    title: "From Karachi Streets to International Glory: Babar Azam's Journey",
+    excerpt: "An inspiring story of how Babar Azam rose from playing cricket in Karachi's streets to becoming Pakistan's cricket captain.",
     content: "",
     category: "Athlete Stories",
     author: {
-      name: "Michael Torres",
+      name: "Faisal Qureshi",
       avatar: athlete2,
-      role: "Sports Journalist"
+      role: "Sports Journalist - Karachi"
     },
     publishedAt: "2024-02-12",
     readTime: "6 min read",
     featured: true,
     image: blog2,
-    tags: ["Cricket", "Inspiration", "Success Story"]
+    tags: ["Cricket", "Pakistan", "Success Story", "Karachi"]
   },
   {
     id: "3",
-    title: "Nutrition Strategies for Endurance Athletes",
-    excerpt: "Expert nutrition advice to fuel your body for long-distance events and maintain energy throughout competitions.",
+    title: "Pakistani Diet for Athletes: Traditional Foods for Peak Performance",
+    excerpt: "Expert nutrition advice combining traditional Pakistani cuisine with modern sports nutrition for optimal athletic performance.",
     content: "",
     category: "Nutrition",
     author: {
-      name: "Emma Chen",
+      name: "Dr. Sana Malik",
       avatar: athlete3,
-      role: "Sports Nutritionist"
+      role: "Sports Nutritionist - Lahore"
     },
     publishedAt: "2024-02-10",
     readTime: "5 min read",
     featured: false,
     image: blog3,
-    tags: ["Nutrition", "Endurance", "Health"]
+    tags: ["Nutrition", "Pakistani Food", "Health", "Lahore"]
   },
   {
     id: "4",
-    title: "Mental Toughness: The Hidden Champion's Edge",
-    excerpt: "Learn psychological techniques used by Olympic athletes to stay focused under pressure and overcome setbacks.",
+    title: "Mental Toughness: Lessons from Pakistan Cricket Legends",
+    excerpt: "Learn psychological techniques used by Pakistani cricket legends to perform under pressure and overcome challenges.",
     content: "",
     category: "Mental Game",
     author: {
-      name: "Dr. James Wilson",
+      name: "Dr. Imran Hussain",
       avatar: athlete1,
-      role: "Sports Psychologist"
+      role: "Sports Psychologist - Islamabad"
     },
     publishedAt: "2024-02-08",
     readTime: "7 min read",
     featured: false,
     image: blog4,
-    tags: ["Mental Health", "Psychology", "Focus"]
+    tags: ["Mental Health", "Cricket Psychology", "Pakistan"]
   },
   {
     id: "5",
-    title: "2024 Sports Technology Trends Reshaping Athletics",
-    excerpt: "From AI-powered coaching to wearable tech, explore the innovations transforming how athletes train and compete.",
+    title: "University Sports in Pakistan: Rising Talent from Campuses",
+    excerpt: "Spotlight on emerging athletes from Pakistani universities competing in inter-university championships across Karachi, Lahore, and Islamabad.",
     content: "",
-    category: "Technology",
+    category: "Athlete Stories",
     author: {
-      name: "Lisa Park",
+      name: "Zara Ahmed",
       avatar: athlete2,
-      role: "Tech Analyst"
+      role: "University Sports Correspondent"
     },
     publishedAt: "2024-02-05",
     readTime: "6 min read",
     featured: false,
     image: blog1,
-    tags: ["Technology", "Innovation", "Wearables"]
+    tags: ["University Sports", "Pakistan", "Young Talent"]
   },
   {
     id: "6",
-    title: "Recovery Secrets: How Pros Bounce Back Faster",
-    excerpt: "Professional recovery techniques that help elite athletes minimize downtime and prevent injuries.",
+    title: "Football Rising: Pakistan's Growing Football Culture",
+    excerpt: "Exploring the grassroots football movement in Pakistan from Rawalpindi to Faisalabad and the talent emerging nationwide.",
     content: "",
-    category: "Recovery",
+    category: "Athlete Stories",
     author: {
-      name: "Mark Thompson",
+      name: "Bilal Khan",
       avatar: athlete3,
-      role: "Physiotherapist"
+      role: "Football Analyst - Rawalpindi"
     },
     publishedAt: "2024-02-03",
     readTime: "5 min read",
     featured: false,
     image: blog2,
-    tags: ["Recovery", "Injury Prevention", "Wellness"]
+    tags: ["Football", "Pakistan", "Rawalpindi", "Faisalabad"]
   }
 ];
 
 const categories = [
   { name: "All", icon: BookOpen, count: blogPosts.length },
-  { name: "Training Tips", icon: Target, count: 1 },
-  { name: "Athlete Stories", icon: Trophy, count: 1 },
-  { name: "Nutrition", icon: Flame, count: 1 },
-  { name: "Mental Game", icon: Star, count: 1 },
-  { name: "Technology", icon: TrendingUp, count: 1 },
-  { name: "Recovery", icon: Users, count: 1 }
+  { name: "Training Tips", icon: Target, count: blogPosts.filter(p => p.category === "Training Tips").length },
+  { name: "Athlete Stories", icon: Trophy, count: blogPosts.filter(p => p.category === "Athlete Stories").length },
+  { name: "Nutrition", icon: Flame, count: blogPosts.filter(p => p.category === "Nutrition").length },
+  { name: "Mental Game", icon: Star, count: blogPosts.filter(p => p.category === "Mental Game").length },
+  { name: "Technology", icon: TrendingUp, count: blogPosts.filter(p => p.category === "Technology").length },
+  { name: "Recovery", icon: Activity, count: blogPosts.filter(p => p.category === "Recovery").length }
 ];
+
+// Category styling config
+const categoryConfig: Record<string, { icon: any; color: string; bgColor: string; borderColor: string }> = {
+  "All": { icon: BookOpen, color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20" },
+  "Training Tips": { icon: Target, color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/20" },
+  "Athlete Stories": { icon: Trophy, color: "text-amber-400", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/20" },
+  "Nutrition": { icon: Flame, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" },
+  "Mental Game": { icon: Star, color: "text-purple-400", bgColor: "bg-purple-500/10", borderColor: "border-purple-500/20" },
+  "Technology": { icon: TrendingUp, color: "text-cyan-400", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/20" },
+  "Recovery": { icon: Activity, color: "text-rose-400", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/20" }
+};
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [hoveredPost, setHoveredPost] = useState<string | null>(null);
 
   const filteredPosts = blogPosts.filter(post => {
     const matchesSearch = 
@@ -180,147 +200,213 @@ const Blog = () => {
 
   const featuredPosts = filteredPosts.filter(post => post.featured);
   const regularPosts = filteredPosts.filter(post => !post.featured);
+  
+  // Get trending post (first featured)
+  const trendingPost = featuredPosts[0];
 
   return (
     <div className="min-h-screen bg-background">
+      <BlogSEO />
       <Navbar />
       
-      {/* Hero Section with Image */}
-      <section className="relative min-h-[500px] lg:min-h-[600px] flex items-center">
-        {/* Background Image */}
+      {/* Modern Hero Section */}
+      <section className="relative py-24 lg:py-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Animated Background */}
         <div className="absolute inset-0">
-          <img 
-            src={blogHero} 
-            alt="Blog Hero" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/70" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl opacity-20" />
         </div>
         
-        {/* Content */}
-        <div className="relative w-full px-4 sm:px-6 lg:px-8 py-20">
-          <div className="max-w-7xl mx-auto">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary text-sm font-semibold mb-6 backdrop-blur-sm">
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
                 <BookOpen className="h-4 w-4" />
-                <span>Sportika Blog</span>
+                <span>Pakistan Sports Hub</span>
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-foreground mb-6 tracking-tight">
-                Insights & <span className="text-primary">Inspiration</span>
+              
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-bold text-foreground mb-6 tracking-tight">
+                Pakistani Sports{' '}
+                <span className="text-gradient">Stories</span>
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8">
-                Expert tips, athlete stories, and the latest in sports technology. 
-                Fuel your passion and elevate your game.
+              
+              <p className="text-xl text-foreground-secondary max-w-xl mb-8 leading-relaxed">
+                Expert cricket training tips, athlete journeys from Karachi to Lahore, and sports insights from across Pakistan. 
+                Everything you need to elevate your game.
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Badge variant="secondary" className="px-3 py-1 text-sm">
-                  <Trophy className="h-3 w-3 mr-1" /> Training Tips
-                </Badge>
-                <Badge variant="secondary" className="px-3 py-1 text-sm">
-                  <Users className="h-3 w-3 mr-1" /> Athlete Stories
-                </Badge>
-                <Badge variant="secondary" className="px-3 py-1 text-sm">
-                  <TrendingUp className="h-3 w-3 mr-1" /> Latest Trends
-                </Badge>
+
+              {/* Stats */}
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">50K+</p>
+                    <p className="text-sm text-foreground-muted">Readers</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">200+</p>
+                    <p className="text-sm text-foreground-muted">Articles</p>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Right - Trending Card */}
+            {trendingPost && (
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl opacity-50" />
+                <Card className="relative overflow-hidden border-0 shadow-2xl">
+                  <div className="relative h-64 overflow-hidden">
+                    <img 
+                      src={trendingPost.image} 
+                      alt={trendingPost.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-primary text-primary-foreground font-semibold">
+                        <Flame className="h-3 w-3 mr-1" />
+                        Trending Now
+                      </Badge>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6">
+                      <p className="text-primary text-sm font-medium mb-2">{trendingPost.category}</p>
+                      <h3 className="text-2xl font-display font-bold text-white mb-2">
+                        {trendingPost.title}
+                      </h3>
+                      <p className="text-white/80 text-sm line-clamp-2">
+                        {trendingPost.excerpt}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Search & Categories */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8 border-y border-border/50 bg-secondary/20">
+      {/* Sticky Search & Filter Bar */}
+      <section className="sticky top-0 z-40 py-4 px-4 sm:px-6 lg:px-8 bg-background/95 backdrop-blur-xl border-b border-border/50">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6 items-center">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
             {/* Search */}
-            <div className="relative flex-1 w-full max-w-xl">
+            <div className="relative flex-1 w-full max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search articles, topics, or athletes..."
+                placeholder="Search articles, topics, tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-12 text-base bg-background"
+                className="pl-12 h-12 text-base bg-card border-border/50 rounded-xl focus:border-primary"
               />
             </div>
             
-            {/* Categories */}
+            {/* Category Pills */}
             <div className="flex flex-wrap justify-center gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.name}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === category.name
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  <category.icon className="h-4 w-4" />
-                  {category.name}
-                  <span className={`px-2 py-0.5 rounded-full text-xs ${
-                    selectedCategory === category.name
-                      ? "bg-primary-foreground/20"
-                      : "bg-background"
-                  }`}>
-                    {category.count}
-                  </span>
-                </button>
-              ))}
+              {categories.map((category) => {
+                const config = categoryConfig[category.name];
+                const isActive = selectedCategory === category.name;
+                return (
+                  <button
+                    key={category.name}
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                      isActive
+                        ? `${config.bgColor} ${config.color} border ${config.borderColor} shadow-lg`
+                        : "bg-card text-foreground-secondary hover:bg-card-hover border border-border/50"
+                    }`}
+                  >
+                    <category.icon className="h-4 w-4" />
+                    {category.name}
+                    <span className={`px-2 py-0.5 rounded-lg text-xs ${
+                      isActive ? "bg-current/20" : "bg-muted"
+                    }`}>
+                      {category.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Posts */}
+      {/* Featured Posts Grid */}
       {featuredPosts.length > 0 && selectedCategory === "All" && !searchQuery && (
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-secondary/10">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Star className="h-5 w-5 text-primary" />
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display font-bold text-foreground">Featured Stories</h2>
+                  <p className="text-foreground-muted text-sm">Handpicked articles for you</p>
+                </div>
               </div>
-              <h2 className="text-2xl font-display font-bold">Featured Stories</h2>
+              <Button variant="outline" className="hidden sm:flex items-center gap-2">
+                View All
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {featuredPosts.map((post, index) => (
                 <Card 
                   key={post.id} 
-                  className={`group overflow-hidden border-0 shadow-xl shadow-black/5 ${
+                  className={`group overflow-hidden border-border/50 bg-card hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 ${
                     index === 0 ? 'lg:row-span-2' : ''
                   }`}
+                  onMouseEnter={() => setHoveredPost(post.id)}
+                  onMouseLeave={() => setHoveredPost(null)}
                 >
                   <div className={`relative overflow-hidden ${
-                    index === 0 ? 'h-80 lg:h-full min-h-[400px]' : 'h-48'
+                    index === 0 ? 'h-80 lg:h-96' : 'h-56'
                   }`}>
                     <img 
                       src={post.image} 
                       alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Category Badge */}
                     <div className="absolute top-4 left-4">
-                      <Badge className="bg-primary text-primary-foreground">
+                      <Badge 
+                        className={`${categoryConfig[post.category]?.bgColor || 'bg-primary/10'} ${categoryConfig[post.category]?.color || 'text-primary'} border-0 font-medium backdrop-blur-sm`}
+                      >
                         {post.category}
+                      </Badge>
+                    </div>
+
+                    {/* Read Time */}
+                    <div className="absolute top-4 right-4">
+                      <Badge variant="secondary" className="bg-black/50 text-white border-0 backdrop-blur-sm">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {post.readTime}
                       </Badge>
                     </div>
                   </div>
                   
                   <CardContent className={`p-6 ${index === 0 ? 'lg:p-8' : ''}`}>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(post.publishedAt).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {post.readTime}
-                      </span>
+                    {/* Meta */}
+                    <div className="flex items-center gap-3 text-sm text-foreground-muted mb-3">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(post.publishedAt).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}
                     </div>
                     
                     <h3 className={`font-display font-bold text-foreground mb-3 group-hover:text-primary transition-colors ${
@@ -329,13 +415,14 @@ const Blog = () => {
                       {post.title}
                     </h3>
                     
-                    <p className={`text-muted-foreground mb-4 ${index === 0 ? 'text-base' : 'text-sm line-clamp-2'}`}>
+                    <p className={`text-foreground-secondary mb-6 ${index === 0 ? 'text-base line-clamp-3' : 'text-sm line-clamp-2'}`}>
                       {post.excerpt}
                     </p>
                     
-                    <div className="flex items-center justify-between">
+                    {/* Author & Action */}
+                    <div className="flex items-center justify-between pt-4 border-t border-border/50">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-10 w-10 border-2 border-card">
                           <AvatarImage src={post.author.avatar} />
                           <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                             {post.author.name.split(' ').map(n => n[0]).join('')}
@@ -343,11 +430,15 @@ const Blog = () => {
                         </Avatar>
                         <div>
                           <p className="font-medium text-sm text-foreground">{post.author.name}</p>
-                          <p className="text-xs text-muted-foreground">{post.author.role}</p>
+                          <p className="text-xs text-foreground-muted">{post.author.role}</p>
                         </div>
                       </div>
                       
-                      <Button variant="ghost" size="sm" className="group/btn">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="group/btn text-primary hover:text-primary hover:bg-primary/10"
+                      >
                         Read More
                         <ArrowRight className="h-4 w-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
                       </Button>
@@ -360,7 +451,7 @@ const Blog = () => {
         </section>
       )}
 
-      {/* All Posts */}
+      {/* All Posts - Modern Grid */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">

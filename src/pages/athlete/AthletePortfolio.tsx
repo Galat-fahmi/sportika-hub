@@ -36,6 +36,7 @@ import {
   Trash2,
   Edit3
 } from "lucide-react";
+import { generateSlug } from "@/lib/athlete-portfolio-api";
 
 interface PortfolioData {
   id: string;
@@ -57,6 +58,16 @@ interface PortfolioData {
   views_count: number;
   is_verified: boolean;
   published_at: string | null;
+  achievements?: Achievement[];
+  gallery?: GalleryImage[];
+  stats?: {
+    events?: number;
+    wins?: number;
+    win_rate?: string;
+    ranking_position?: number;
+  };
+  country?: string;
+  achievements_count?: number;
 }
 
 interface Achievement {
@@ -99,12 +110,16 @@ const usePortfolio = () => {
           .eq('user_id', user.id)
           .single();
         
+        // Generate slug from title
+        const title = profile?.full_name || 'My Portfolio';
+        const slug = generateSlug(title);
+        
         // Create portfolio with profile data
         const { data: newPortfolio, error: createError } = await supabase
           .from('athlete_portfolios')
           .insert({
             user_id: user.id,
-            title: profile?.full_name || 'My Portfolio',
+            title: title,
             bio: profile?.bio,
             profile_image_url: profile?.avatar_url,
             sports: profile?.sport ? [profile.sport] : [],
@@ -115,7 +130,7 @@ const usePortfolio = () => {
               website: profile?.social_website,
             },
             visibility: 'public',
-            slug: user.id.slice(0, 8),
+            slug: slug,
           })
           .select()
           .single();
@@ -143,7 +158,15 @@ const AthletePortfolio = () => {
   const [showShareDialog, setShowShareDialog] = useState(false);
   
   // Form states
-  const [formData, setFormData] = useState<Partial<PortfolioData>>({});
+  const [formData, setFormData] = useState<Partial<PortfolioData>>({
+    title: '',
+    bio: '',
+    sports: [],
+    specialties: [],
+    social_links: {},
+    stats: {},
+    country: '',
+  });
   const [newAchievement, setNewAchievement] = useState({ title: "", year: "", category: "", description: "" });
   const [newImage, setNewImage] = useState({ caption: "" });
 
@@ -152,28 +175,76 @@ const AthletePortfolio = () => {
     mutationFn: async (data: Partial<PortfolioData>) => {
       if (!user) throw new Error("User not authenticated");
       
-      const { data: result, error } = await supabase.rpc(
-        "update_athlete_portfolio",
-        {
-          _user_id: user.id,
-          _slug: data.slug,
-          _title: data.title,
-          _tagline: data.tagline,
-          _bio: data.bio,
-          _cover_image_url: data.cover_image_url,
-          _profile_image_url: data.profile_image_url,
-          _theme_color: data.theme_color,
-          _email: data.email,
-          _phone: data.phone,
-          _website: data.website,
-          _social_links: data.social_links,
-          _visibility: data.visibility as any,
-          _sports: data.sports,
-          _specialties: data.specialties,
-        }
-      );
+      // Check if portfolio exists
+      const { data: existingPortfolio, error: fetchError } = await supabase
+        .from('athlete_portfolios')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
       
-      if (error) throw error;
+      // Generate slug from title if not provided and it's a new portfolio
+      let finalSlug = data.slug;
+      if (data.title && !finalSlug && !existingPortfolio) {
+        finalSlug = generateSlug(data.title);
+      }
+      
+      let result;
+      
+      if (existingPortfolio) {
+        // Update existing portfolio
+        const { data: updateResult, error } = await supabase
+          .from('athlete_portfolios')
+          .update({
+            slug: finalSlug,
+            title: data.title,
+            tagline: data.tagline,
+            bio: data.bio,
+            cover_image_url: data.cover_image_url,
+            profile_image_url: data.profile_image_url,
+            theme_color: data.theme_color,
+            email: data.email,
+            phone: data.phone,
+            website: data.website,
+            social_links: data.social_links,
+            visibility: data.visibility,
+            sports: data.sports,
+            specialties: data.specialties,
+            last_updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = updateResult;
+      } else {
+        // Create new portfolio
+        const { data: insertResult, error } = await supabase
+          .from('athlete_portfolios')
+          .insert({
+            user_id: user.id,
+            slug: finalSlug,
+            title: data.title ?? '',
+            tagline: data.tagline,
+            bio: data.bio,
+            cover_image_url: data.cover_image_url,
+            profile_image_url: data.profile_image_url,
+            theme_color: data.theme_color ?? '#3B82F6',
+            email: data.email,
+            phone: data.phone,
+            website: data.website,
+            social_links: data.social_links ?? {},
+            visibility: data.visibility ?? 'public',
+            sports: data.sports ?? [],
+            specialties: data.specialties ?? [],
+            published_at: data.visibility === 'public' ? new Date().toISOString() : null,
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = insertResult;
+      }
       
       // Sync relevant fields back to the main profile
       if (data.title || data.bio || data.profile_image_url || data.sports) {
@@ -197,8 +268,9 @@ const AthletePortfolio = () => {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athlete-portfolio'] });
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['athlete-portfolio', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['public-portfolios'] });
       setIsEditing(false);
     },
     onError: (error: any) => {
@@ -218,6 +290,23 @@ const AthletePortfolio = () => {
     updatePortfolio.mutate({ visibility: visibility as any });
   };
 
+  // Function to publish portfolio to make it public
+  const handlePublish = () => {
+    if (!portfolio?.title) {
+      toast({
+        title: "Cannot publish portfolio",
+        description: "Please add a title to your portfolio before publishing",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    updatePortfolio.mutate({ 
+      visibility: 'public' as const,
+      published_at: portfolio.published_at || new Date().toISOString()
+    });
+  };
+
   const handleCopyLink = () => {
     const link = `${window.location.origin}/player/${portfolio?.slug}`;
     navigator.clipboard.writeText(link);
@@ -233,11 +322,33 @@ const AthletePortfolio = () => {
     // TODO: Implement PDF generation
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      toast({ title: "Image uploaded successfully!" });
-      // TODO: Implement actual image upload
+    if (file && user) {
+      try {
+        // In a real implementation, we would upload to Supabase storage
+        // For now, we'll just update the form data to trigger a save
+        // The actual upload would be done in the updatePortfolio mutation
+        
+        // For this demo, we'll just update the form data and trigger save
+        setFormData(prev => ({
+          ...prev,
+          profile_image_url: URL.createObjectURL(file) // This is temporary for preview
+        }));
+        
+        // Show a message to inform user that image will be saved with other changes
+        toast({ 
+          title: "Image selected!",
+          description: "Click 'Save All Changes' to save the new image to your portfolio"
+        });
+      } catch (error) {
+        console.error('Error processing image:', error);
+        toast({ 
+          title: "Error processing image", 
+          description: "Please try again",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -296,7 +407,7 @@ const AthletePortfolio = () => {
       {/* Privacy Toggle */}
       <Card className="glass">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${portfolio?.visibility === 'public' ? 'bg-green-500/10' : 'bg-yellow-500/10'}`}>
                 {portfolio?.visibility === 'public' ? (
@@ -316,10 +427,18 @@ const AthletePortfolio = () => {
                 </p>
               </div>
             </div>
-            <Switch
-              checked={portfolio?.visibility === 'public'}
-              onCheckedChange={(checked) => handleTogglePrivacy(checked ? 'public' : 'private')}
-            />
+            <div className="flex gap-2">
+              {!portfolio?.published_at && portfolio?.visibility !== 'public' && (
+                <Button onClick={handlePublish}>
+                  <Globe className="h-4 w-4 mr-2" />
+                  Publish Portfolio
+                </Button>
+              )}
+              <Switch
+                checked={portfolio?.visibility === 'public'}
+                onCheckedChange={(checked) => handleTogglePrivacy(checked ? 'public' : 'private')}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -381,7 +500,7 @@ const AthletePortfolio = () => {
                     <Label>Full Name</Label>
                     {isEditing ? (
                       <Input
-                        value={formData.title || portfolio?.title}
+                        value={formData.title ?? portfolio?.title ?? ''}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         className="mt-1"
                       />
@@ -393,7 +512,7 @@ const AthletePortfolio = () => {
                     <Label>Sport</Label>
                     {isEditing ? (
                       <Input
-                        value={formData.sports?.[0] || portfolio?.sports?.[0]}
+                        value={formData.sports?.[0] ?? portfolio?.sports?.[0] ?? ''}
                         onChange={(e) => setFormData({ ...formData, sports: [e.target.value] })}
                         className="mt-1"
                       />
@@ -405,12 +524,12 @@ const AthletePortfolio = () => {
                     <Label>Location</Label>
                     {isEditing ? (
                       <Input
-                        value={formData.country || portfolio?.country}
+                        value={formData.country ?? ''}
                         onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                         className="mt-1"
                       />
                     ) : (
-                      <p className="mt-1 text-foreground">{portfolio?.country}</p>
+                      <p className="mt-1 text-foreground">{formData.country ?? 'Not specified'}</p>
                     )}
                   </div>
                   <div>
@@ -425,7 +544,7 @@ const AthletePortfolio = () => {
                   <Label>Description</Label>
                   {isEditing ? (
                     <Textarea
-                      value={formData.bio || portfolio?.bio}
+                      value={formData.bio ?? portfolio?.bio ?? ''}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       className="mt-1"
                       rows={3}
@@ -439,7 +558,7 @@ const AthletePortfolio = () => {
                   <Label>Specialties</Label>
                   {isEditing ? (
                     <Textarea
-                      value={formData.specialties?.join(', ') || portfolio?.specialties?.join(', ')}
+                      value={formData.specialties?.join(', ') ?? portfolio?.specialties?.join(', ') ?? ''}
                       onChange={(e) => setFormData({ ...formData, specialties: e.target.value.split(',').map(s => s.trim()) })}
                       className="mt-1"
                       rows={2}
@@ -458,7 +577,7 @@ const AthletePortfolio = () => {
                       <>
                         <Input
                           placeholder="Instagram handle (e.g., @username)"
-                          value={formData.social_links?.instagram || portfolio?.social_links?.instagram}
+                          value={formData.social_links?.instagram ?? portfolio?.social_links?.instagram ?? ''}
                           onChange={(e) => setFormData({ 
                             ...formData, 
                             social_links: { ...formData.social_links, instagram: e.target.value }
@@ -466,7 +585,7 @@ const AthletePortfolio = () => {
                         />
                         <Input
                           placeholder="Twitter handle (e.g., @username)"
-                          value={formData.social_links?.twitter || portfolio?.social_links?.twitter}
+                          value={formData.social_links?.twitter ?? portfolio?.social_links?.twitter ?? ''}
                           onChange={(e) => setFormData({ 
                             ...formData, 
                             social_links: { ...formData.social_links, twitter: e.target.value }
@@ -474,7 +593,7 @@ const AthletePortfolio = () => {
                         />
                         <Input
                           placeholder="Website URL"
-                          value={formData.social_links?.website || portfolio?.social_links?.website}
+                          value={formData.social_links?.website ?? portfolio?.social_links?.website ?? ''}
                           onChange={(e) => setFormData({ 
                             ...formData, 
                             social_links: { ...formData.social_links, website: e.target.value }
@@ -560,7 +679,7 @@ const AthletePortfolio = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {portfolio?.achievements?.map((achievement) => (
+                {(portfolio?.achievements || []).map((achievement) => (
                   <div key={achievement.id} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/50">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Trophy className="h-6 w-6 text-primary" />
@@ -582,7 +701,7 @@ const AthletePortfolio = () => {
                     )}
                   </div>
                 ))}
-                {portfolio?.achievements?.length === 0 && (
+                {(portfolio?.achievements?.length || 0) === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>No achievements added yet</p>
@@ -613,7 +732,7 @@ const AthletePortfolio = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {portfolio?.gallery?.map((image) => (
+                {(portfolio?.gallery || []).map((image) => (
                   <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden bg-secondary group">
                     <img src={image.url} alt={image.caption} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
@@ -626,7 +745,7 @@ const AthletePortfolio = () => {
                     )}
                   </div>
                 ))}
-                {portfolio?.gallery?.length === 0 && (
+                {(portfolio?.gallery?.length || 0) === 0 && (
                   <div className="col-span-full text-center py-12 text-muted-foreground">
                     <ImageIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
                     <p>No photos uploaded yet</p>
@@ -663,15 +782,15 @@ const AthletePortfolio = () => {
                   {isEditing ? (
                     <Input
                       type="number"
-                      value={formData.stats?.events || portfolio?.stats.events}
+                      value={formData.stats?.events ?? 0}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        stats: { ...formData.stats, events: parseInt(e.target.value) }
+                        stats: { ...formData.stats, events: parseInt(e.target.value) || 0 }
                       })}
                       className="text-center text-2xl font-bold"
                     />
                   ) : (
-                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats.events}</p>
+                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats?.events || 0}</p>
                   )}
                   <p className="text-sm text-muted-foreground mt-1">Total Events</p>
                 </div>
@@ -683,15 +802,15 @@ const AthletePortfolio = () => {
                   {isEditing ? (
                     <Input
                       type="number"
-                      value={formData.stats?.wins || portfolio?.stats.wins}
+                      value={formData.stats?.wins ?? 0}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        stats: { ...formData.stats, wins: parseInt(e.target.value) }
+                        stats: { ...formData.stats, wins: parseInt(e.target.value) || 0 }
                       })}
                       className="text-center text-2xl font-bold"
                     />
                   ) : (
-                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats.wins}</p>
+                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats?.wins || 0}</p>
                   )}
                   <p className="text-sm text-muted-foreground mt-1">Wins</p>
                 </div>
@@ -702,7 +821,7 @@ const AthletePortfolio = () => {
                   </div>
                   {isEditing ? (
                     <Input
-                      value={formData.stats?.win_rate || portfolio?.stats.win_rate}
+                      value={formData.stats?.win_rate ?? ''}
                       onChange={(e) => setFormData({ 
                         ...formData, 
                         stats: { ...formData.stats, win_rate: e.target.value }
@@ -710,7 +829,7 @@ const AthletePortfolio = () => {
                       className="text-center text-2xl font-bold"
                     />
                   ) : (
-                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats.win_rate}</p>
+                    <p className="text-3xl font-bold text-foreground">{portfolio?.stats?.win_rate || 'N/A'}</p>
                   )}
                   <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
                 </div>
@@ -722,15 +841,15 @@ const AthletePortfolio = () => {
                   {isEditing ? (
                     <Input
                       type="number"
-                      value={formData.stats?.ranking_position || portfolio?.stats.ranking_position}
+                      value={formData.stats?.ranking_position ?? 0}
                       onChange={(e) => setFormData({ 
                         ...formData, 
-                        stats: { ...formData.stats, ranking_position: parseInt(e.target.value) }
+                        stats: { ...formData.stats, ranking_position: parseInt(e.target.value) || 0 }
                       })}
                       className="text-center text-2xl font-bold"
                     />
                   ) : (
-                    <p className="text-3xl font-bold text-foreground">#{portfolio?.stats.ranking_position}</p>
+                    <p className="text-3xl font-bold text-foreground">#{portfolio?.stats?.ranking_position || 0}</p>
                   )}
                   <p className="text-sm text-muted-foreground mt-1">Current Ranking</p>
                 </div>
@@ -754,7 +873,7 @@ const AthletePortfolio = () => {
                 <AvatarFallback className="text-2xl">{portfolio?.title?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <h2 className="text-2xl font-bold">{portfolio?.title}</h2>
-              <p className="text-muted-foreground">{portfolio?.sport} • {portfolio?.country}</p>
+              <p className="text-muted-foreground">{(portfolio?.sports && portfolio?.sports.length > 0) ? portfolio.sports[0] : 'Athlete'} • Global</p>
               <div className="flex justify-center gap-2 mt-4">
                 <Button variant="outline" size="sm" onClick={handleCopyLink}>
                   <LinkIcon className="h-4 w-4 mr-2" />
