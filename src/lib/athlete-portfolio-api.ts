@@ -264,3 +264,195 @@ export const ensurePortfolioSlug = async (userId: string, title?: string): Promi
   
   return finalSlug;
 };
+
+// Update athlete portfolio using RPC function
+export const updateAthletePortfolio = async (
+  userId: string,
+  portfolioData: {
+    slug?: string;
+    title?: string;
+    tagline?: string;
+    bio?: string;
+    cover_image_url?: string;
+    profile_image_url?: string;
+    theme_color?: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+    social_links?: any;
+    visibility?: 'public' | 'private';
+    sports?: string[];
+    specialties?: string[];
+  }
+): Promise<string> => {
+  const { data, error } = await supabase.rpc('update_athlete_portfolio', {
+    _user_id: userId,
+    _slug: portfolioData.slug,
+    _title: portfolioData.title,
+    _tagline: portfolioData.tagline,
+    _bio: portfolioData.bio,
+    _cover_image_url: portfolioData.cover_image_url,
+    _profile_image_url: portfolioData.profile_image_url,
+    _theme_color: portfolioData.theme_color,
+    _email: portfolioData.email,
+    _phone: portfolioData.phone,
+    _website: portfolioData.website,
+    _social_links: portfolioData.social_links,
+    _visibility: portfolioData.visibility,
+    _sports: portfolioData.sports,
+    _specialties: portfolioData.specialties
+  });
+
+  if (error) {
+    console.error('Error updating athlete portfolio:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+// Upload portfolio image to Supabase Storage
+export const uploadPortfolioImage = async (
+  userId: string,
+  file: File,
+  type: 'profile' | 'cover' | 'gallery'
+): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${type}-${Date.now()}.${fileExt}`;
+  const filePath = `${userId}/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('portfolio-images')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError);
+    throw uploadError;
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('portfolio-images')
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+};
+
+// Add achievement to portfolio
+export const addPortfolioAchievement = async (
+  portfolioId: string,
+  achievement: {
+    title: string;
+    year: string;
+    category: string;
+    description?: string;
+  }
+): Promise<void> => {
+  const { error } = await supabase
+    .from('portfolio_achievements')
+    .insert({
+      portfolio_id: portfolioId,
+      title: achievement.title,
+      year: achievement.year,
+      category: achievement.category,
+      description: achievement.description
+    });
+
+  if (error) {
+    console.error('Error adding achievement:', error);
+    throw error;
+  }
+};
+
+// Delete achievement from portfolio
+export const deletePortfolioAchievement = async (
+  achievementId: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('portfolio_achievements')
+    .delete()
+    .eq('id', achievementId);
+
+  if (error) {
+    console.error('Error deleting achievement:', error);
+    throw error;
+  }
+};
+
+// Add gallery image to portfolio
+export const addPortfolioGalleryImage = async (
+  portfolioId: string,
+  imageData: {
+    url: string;
+    caption?: string;
+  }
+): Promise<void> => {
+  const { error } = await supabase
+    .from('portfolio_media')
+    .insert({
+      portfolio_id: portfolioId,
+      media_type: 'image',
+      url: imageData.url,
+      caption: imageData.caption,
+      uploaded_at: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error('Error adding gallery image:', error);
+    throw error;
+  }
+};
+
+// Delete gallery image from portfolio
+export const deletePortfolioGalleryImage = async (
+  imageId: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('portfolio_media')
+    .delete()
+    .eq('id', imageId);
+
+  if (error) {
+    console.error('Error deleting gallery image:', error);
+    throw error;
+  }
+};
+
+// Get athlete's own portfolio (for dashboard)
+export const getMyPortfolio = async (userId: string): Promise<PublicAthletePortfolio | null> => {
+  const { data, error } = await supabase
+    .from('athlete_portfolios')
+    .select(`
+      id,
+      user_id,
+      slug,
+      title,
+      tagline,
+      bio,
+      profile_image_url,
+      cover_image_url,
+      theme_color,
+      email,
+      phone,
+      website,
+      social_links,
+      sports,
+      specialties,
+      views_count,
+      is_verified,
+      published_at,
+      visibility
+    `)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No portfolio exists yet
+      return null;
+    }
+    console.error('Error fetching my portfolio:', error);
+    throw error;
+  }
+
+  return data;
+};

@@ -1,41 +1,50 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Zap } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ArrowRight, Zap, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-sports.jpg";
 
 const HeroSection = () => {
+  const { scrollY } = useScroll();
+  const bgY = useTransform(scrollY, [0, 600], [0, 150]);
+  const opacity = useTransform(scrollY, [0, 400], [1, 0]);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background image */}
-      <div className="absolute inset-0">
+      {/* Parallax background */}
+      <motion.div className="absolute inset-0" style={{ y: bgY }}>
         <img
           src={heroImage}
           alt="Athletes in motion"
-          className="w-full h-full object-cover opacity-30"
+          className="w-full h-full object-cover opacity-25 scale-110"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background/90 to-background/70" />
-      </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/85 to-background" />
+      </motion.div>
 
       {/* Grid overlay */}
-      <div className="absolute inset-0 grid-pattern opacity-20" />
+      <div className="absolute inset-0 grid-pattern opacity-10" />
 
       {/* Glow orbs */}
-      <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-primary/15 blur-[150px] animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-[350px] h-[350px] rounded-full bg-accent/15 blur-[150px] animate-pulse" style={{ animationDelay: "1s" }} />
+      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[180px] animate-pulse-slow" />
+      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/10 blur-[180px] animate-pulse-slow" style={{ animationDelay: "1.5s" }} />
 
-      <div className="relative z-10 container mx-auto text-center px-4">
+      <motion.div style={{ opacity }} className="relative z-10 container mx-auto text-center px-4 pt-24">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 mb-8 backdrop-blur-sm">
+          <motion.div 
+            className="inline-flex items-center gap-2.5 rounded-full border border-primary/30 bg-primary/5 px-5 py-2.5 mb-10 backdrop-blur-md"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
             <Zap className="h-4 w-4 text-primary animate-pulse" />
-            <span className="text-sm font-semibold text-primary tracking-wider uppercase">
+            <span className="text-xs font-bold text-primary tracking-[0.2em] uppercase">
               Performance-Driven Sports Technology
             </span>
-          </div>
+          </motion.div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black leading-[0.9] tracking-tighter mb-8">
             <span className="text-foreground">PAKISTAN'S #1</span>
@@ -50,47 +59,64 @@ const HeroSection = () => {
             athlete sponsorship opportunities, and corporate sports events across Karachi, Lahore, Islamabad & Pakistan.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-16">
+          <motion.div 
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85, duration: 0.6 }}
+          >
             <Link
               to="/register"
-              className="group inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary to-accent px-8 py-4 text-lg font-bold text-primary-foreground hover:from-primary/90 hover:to-accent/90 transition-all duration-300 glow-primary shadow-2xl hover:shadow-primary/25"
+              className="group btn-premium inline-flex items-center gap-3 rounded-xl px-10 py-4 text-lg text-primary-foreground"
             >
               Join Sportika
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1.5" />
             </Link>
             <Link
-              to="#cta"
-              className="inline-flex items-center gap-3 rounded-xl border-2 border-border bg-secondary/50 px-8 py-4 text-lg font-bold text-secondary-foreground hover:bg-secondary hover:border-primary/50 transition-all duration-300 backdrop-blur-sm"
+              to="/about"
+              className="btn-outline-premium inline-flex items-center gap-3 rounded-xl px-10 py-4 text-lg text-foreground"
             >
-              Explore Solutions
+              Learn More
             </Link>
-          </div>
+          </motion.div>
         </motion.div>
 
         {/* Stats bar */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+          transition={{ duration: 0.8, delay: 1.1 }}
+          className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto"
         >
           {[
-            { value: "50K+", label: "Active Athletes" },
-            { value: "1.2K+", label: "Events Managed" },
+            { value: "50K+", label: "Athletes" },
+            { value: "1.2K+", label: "Events" },
             { value: "75+", label: "Countries" },
-            { value: "99.99%", label: "Platform Uptime" },
+            { value: "99.9%", label: "Uptime" },
           ].map((stat, index) => (
-            <motion.div 
-              key={stat.label} 
-              className="text-center p-6 rounded-2xl glass border border-border/30 hover:border-primary/40 transition-all duration-300"
-              whileHover={{ y: -5 }}
+            <motion.div
+              key={stat.label}
+              className="text-center p-5 md:p-6 rounded-2xl glass-card hover:border-primary/30 transition-all duration-500 group"
+              whileHover={{ y: -4, scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 + index * 0.1 }}
             >
-              <div className="text-3xl md:text-4xl font-display font-black text-gradient mb-2">{stat.value}</div>
-              <div className="text-sm text-muted-foreground uppercase tracking-widest font-semibold">{stat.label}</div>
+              <div className="text-2xl md:text-3xl font-display font-black text-gradient mb-1">{stat.value}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-[0.15em] font-semibold">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
-      </div>
+      </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div 
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <ChevronDown className="h-6 w-6 text-muted-foreground/50" />
+      </motion.div>
     </section>
   );
 };

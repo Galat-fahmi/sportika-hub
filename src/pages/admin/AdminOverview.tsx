@@ -55,6 +55,28 @@ const AdminOverview = () => {
   const totalRevenue = dashboardOverview?.[0]?.total_revenue ?? 0;
   const pendingVerifications = dashboardOverview?.[0]?.pending_verifications ?? 0;
 
+  const { data: pendingApprovals } = useQuery({
+    queryKey: ["admin-pending-approvals"],
+    queryFn: async () => {
+      const { data: pendingEvents, error: eventsError } = await supabase
+        .from("events")
+        .select("id")
+        .eq("status", "draft");
+      if (eventsError) throw eventsError;
+      
+      const { data: pendingRegs, error: regsError } = await supabase
+        .from("event_registrations")
+        .select("id")
+        .eq("status", "pending");
+      if (regsError) throw regsError;
+      
+      return {
+        events: pendingEvents?.length ?? 0,
+        registrations: pendingRegs?.length ?? 0,
+      };
+    },
+  });
+
   // Calculate user growth rate based on system monitoring or other metrics
   const userGrowthRate = 5; // Placeholder - this would come from user analytics in a real implementation
 

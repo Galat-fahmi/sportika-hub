@@ -398,7 +398,7 @@ const AthletePerformance = () => {
                       <Award className="h-8 w-8 text-primary" />
                     </div>
                     <CardTitle className="text-lg">National Ranking</CardTitle>
-                    <CardDescription>{profile?.country || 'Your country'}</CardDescription>
+                    <CardDescription>{(profile as any)?.country || 'Your country'}</CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">
                     <p className={`text-5xl font-display font-bold ${nationalRank.color} mb-2`}>

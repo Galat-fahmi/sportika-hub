@@ -909,37 +909,40 @@ export type Database = {
       event_registrations: {
         Row: {
           athlete_id: string
-          checked_in: boolean | null
-          checked_in_at: string | null
           event_id: string
           id: string
+<<<<<<< HEAD
           payment_amount: number | null
           payment_date: string | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           registered_at: string
           status: Database["public"]["Enums"]["registration_status"]
         }
         Insert: {
           athlete_id: string
-          checked_in?: boolean | null
-          checked_in_at?: string | null
           event_id: string
           id?: string
+<<<<<<< HEAD
           payment_amount?: number | null
           payment_date?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           registered_at?: string
           status?: Database["public"]["Enums"]["registration_status"]
         }
         Update: {
           athlete_id?: string
-          checked_in?: boolean | null
-          checked_in_at?: string | null
           event_id?: string
           id?: string
+<<<<<<< HEAD
           payment_amount?: number | null
           payment_date?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           registered_at?: string
           status?: Database["public"]["Enums"]["registration_status"]
         }
@@ -1592,11 +1595,13 @@ export type Database = {
       }
       profiles: {
         Row: {
-          age: number | null
           avatar_url: string | null
+<<<<<<< HEAD
           bio: string | null
           city: string | null
           country: string | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           created_at: string
           date_of_birth: string | null
           emergency_contact_name: string | null
@@ -1605,6 +1610,7 @@ export type Database = {
           gender: string | null
           height_cm: number | null
           id: string
+<<<<<<< HEAD
           kyc_rejection_reason: string | null
           kyc_reviewed_at: string | null
           kyc_reviewed_by: string | null
@@ -1625,13 +1631,19 @@ export type Database = {
           verification_documents: Json | null
           verification_status: Database["public"]["Enums"]["verification_status"]
           weight_kg: number | null
+=======
+          updated_at: string
+          user_id: string
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
         }
         Insert: {
-          age?: number | null
           avatar_url?: string | null
+<<<<<<< HEAD
           bio?: string | null
           city?: string | null
           country?: string | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           created_at?: string
           date_of_birth?: string | null
           emergency_contact_name?: string | null
@@ -1640,6 +1652,7 @@ export type Database = {
           gender?: string | null
           height_cm?: number | null
           id?: string
+<<<<<<< HEAD
           kyc_rejection_reason?: string | null
           kyc_reviewed_at?: string | null
           kyc_reviewed_by?: string | null
@@ -1660,13 +1673,19 @@ export type Database = {
           verification_documents?: Json | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
           weight_kg?: number | null
+=======
+          updated_at?: string
+          user_id: string
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
         }
         Update: {
-          age?: number | null
           avatar_url?: string | null
+<<<<<<< HEAD
           bio?: string | null
           city?: string | null
           country?: string | null
+=======
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
           created_at?: string
           date_of_birth?: string | null
           emergency_contact_name?: string | null
@@ -1675,6 +1694,7 @@ export type Database = {
           gender?: string | null
           height_cm?: number | null
           id?: string
+<<<<<<< HEAD
           kyc_rejection_reason?: string | null
           kyc_reviewed_at?: string | null
           kyc_reviewed_by?: string | null
@@ -1821,6 +1841,10 @@ export type Database = {
           show_social_links?: boolean | null
           updated_at?: string
           user_id?: string
+=======
+          updated_at?: string
+          user_id?: string
+>>>>>>> d0ebc8c299c26bfd9a1e6b566960cdce6ee8a43d
         }
         Relationships: []
       }
